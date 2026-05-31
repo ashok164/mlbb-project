@@ -1,0 +1,358 @@
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.stack {
+  position: fixed;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  grid-auto-rows: 87px;
+  gap: 10px;
+  width: 260px;
+  transform: translateY(-50%);
+}
+
+.leftStack {
+  left: 0;
+}
+
+.rightStack {
+  right: 0;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  --card-flip: scaleX(1);
+  width: 260px;
+  height: 87px;
+  overflow: hidden;
+  grid-template-columns: 54px 39px minmax(0, 1fr) 39px;
+  align-items: stretch;
+  border-top: 2px solid #050505;
+  border-bottom: 2px solid #050505;
+  background: #050505;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: var(--card-flip);
+}
+
+.rightCard {
+  --card-flip: scaleX(-1);
+}
+
+.deadCard {
+  opacity: 0.52;
+}
+
+.deadCard.eliminatedCard {
+  opacity: 1;
+  animation: dimAfterEliminated 0.01s linear 2.6s forwards;
+}
+
+.lastSurvivorCard {
+  animation: survivorPulse 0.9s ease-in-out infinite;
+  box-shadow:
+    inset 0 0 0 2px #ffffff,
+    0 0 14px rgba(255, 153, 0, 0.95);
+}
+
+.heroFrame,
+.spellFrame,
+.emblemFrame {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  background: #111111;
+}
+
+.spellFrame,
+.emblemFrame {
+  background: #ff9900;
+}
+
+.rightCard .spellFrame,
+.rightCard .emblemFrame {
+  background: #b86b00;
+}
+
+.leftCard .heroFrame {
+  grid-column: 1;
+}
+
+.leftCard .spellFrame {
+  grid-column: 2;
+}
+
+.leftCard .infoBlock {
+  grid-column: 3;
+}
+
+.leftCard .emblemFrame {
+  grid-column: 4;
+}
+
+.heroFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rightCard .heroFrame,
+.rightCard .spellFrame,
+.rightCard .infoBlock,
+.rightCard .emblemFrame {
+  transform: scaleX(-1);
+}
+
+.spellFrame img,
+.emblemFrame img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #050505;
+}
+
+.levelBadge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  min-width: 23px;
+  height: 22px;
+  place-items: center;
+  background: #ff9900;
+  color: #ffffff;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.rightCard .levelBadge {
+  right: 0;
+  left: auto;
+  background: #b86b00;
+}
+
+.reviveTimer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.58);
+  color: #ffffff;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: 32px;
+  line-height: 1;
+  text-shadow: 0 2px 4px #000000;
+}
+
+.eliminatedOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: rgba(139, 0, 0, 0.96);
+  color: #ffffff;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: 27px;
+  letter-spacing: 1px;
+  line-height: 1;
+  text-shadow: 0 2px 3px #000000;
+  animation:
+    overlayEnterLeft 0.32s ease-out forwards,
+    overlaySwipeOutLeft 1.15s ease-in 1.45s forwards;
+}
+
+.rightCard .eliminatedOverlay {
+  transform: scaleX(-1);
+  animation:
+    overlayEnterRight 0.32s ease-out forwards,
+    overlaySwipeOutRight 1.15s ease-in 1.45s forwards;
+}
+
+.infoBlock {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 3px;
+  padding: 0 10px;
+  background: linear-gradient(90deg, #ffffff 0%, #f2f2f2 100%);
+  color: #111111;
+  border-left: 4px solid #050505;
+}
+
+.rightCard .infoBlock {
+  justify-items: start;
+  text-align: left;
+  border-right: 0;
+  border-left: 4px solid #050505;
+}
+
+.infoBlock strong,
+.infoBlock span {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: Impact, "Arial Black", sans-serif;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.infoBlock strong {
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.infoBlock span {
+  color: #1d1d1d;
+  font-size: 18px;
+}
+
+.healthTrack {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  background: #2a2a2a;
+}
+
+.healthFill {
+  height: 100%;
+  background: linear-gradient(90deg, #17b84f 0%, #7ee45f 100%);
+}
+
+.lowHealthFill {
+  background: #d60000;
+}
+
+.eliminatedCard .healthFill {
+  background: #d60000;
+}
+
+@keyframes overlayEnterLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-105%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes overlayEnterRight {
+  0% {
+    opacity: 0;
+    transform: scaleX(-1) translateX(-105%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scaleX(-1) translateX(0);
+  }
+}
+
+@keyframes overlaySwipeOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-125%);
+  }
+}
+
+@keyframes overlaySwipeOutRight {
+  0% {
+    opacity: 1;
+    transform: scaleX(-1) translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    transform: scaleX(-1) translateX(-125%);
+  }
+}
+
+@keyframes survivorPulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: var(--card-flip) scale(1);
+  }
+
+  50% {
+    filter: brightness(1.22);
+    transform: var(--card-flip) scale(1.04);
+  }
+}
+
+@keyframes dimAfterEliminated {
+  to {
+    opacity: 0.52;
+  }
+}
+
+.waitingPanel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  gap: 8px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 16px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 196, 0, 0.6);
+  border-radius: 8px;
+  background: rgba(5, 5, 5, 0.84);
+  color: #ffffff;
+  text-align: center;
+}
+
+.waitingPanel span {
+  color: #ffc400;
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .stack {
+    width: 200px;
+  }
+
+  .card {
+    width: 200px;
+    grid-template-columns: 42px 30px minmax(0, 1fr) 30px;
+  }
+
+  .infoBlock strong {
+    font-size: 15px;
+  }
+
+  .infoBlock span {
+    font-size: 14px;
+  }
+
+  .healthTrack {
+    height: 6px;
+  }
+}

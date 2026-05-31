@@ -1,8 +1,10 @@
 import type { ReactElement, ReactNode } from "react";
-import { Bell, ListTree, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Bell, Coins, ListTree, Rows3, SlidersHorizontal, Sparkles } from "lucide-react";
 
 const navItems = [
   { path: "/in-game-notification", label: "In-Game" },
+  { path: "/broadcast/live-gold-ranking", label: "Gold Ranking" },
+  { path: "/broadcast/live-levels", label: "Broadcast Levels" },
   { path: "/notification", label: "Notifications" },
   { path: "/routes", label: "Routes" },
   { path: "/control", label: "Control" }
@@ -10,6 +12,8 @@ const navItems = [
 
 const icons: Record<string, ReactElement> = {
   "/in-game-notification": <Sparkles size={18} />,
+  "/broadcast/live-gold-ranking": <Coins size={18} />,
+  "/broadcast/live-levels": <Rows3 size={18} />,
   "/notification": <Bell size={18} />,
   "/routes": <ListTree size={18} />,
   "/control": <SlidersHorizontal size={18} />

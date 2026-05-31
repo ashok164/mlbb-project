@@ -25,6 +25,18 @@ export function getOverlayRoutes(): OverlayRouteLink[] {
       path: "/in-game-notification",
       url: "/in-game-notification",
       description: "Full-screen level-up notification overlay for vMix/browser capture."
+    },
+    {
+      label: "Broadcast Live Levels",
+      path: "/broadcast/live-levels",
+      url: "/broadcast/live-levels",
+      description: "Permanent live level board with hero, spell, KDA, player name, and emblem."
+    },
+    {
+      label: "Broadcast Live Gold Ranking",
+      path: "/broadcast/live-gold-ranking",
+      url: "/broadcast/live-gold-ranking",
+      description: "Live all-player gold ranking overlay with player picture, name, character, and gold."
     }
   ];
 }

@@ -19,11 +19,11 @@
 }
 
 .leftStack {
-  left: clamp(12px, 2.4vw, 44px);
+  left: 0;
 }
 
 .rightStack {
-  right: clamp(12px, 2.4vw, 44px);
+  right: 0;
 }
 
 .lane {

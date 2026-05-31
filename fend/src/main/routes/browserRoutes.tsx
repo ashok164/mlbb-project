@@ -2,6 +2,8 @@ import type { ReactElement } from "react";
 import { Layout } from "../view/Layout";
 import ControlPage from "../../control/view";
 import InGameNotificationPage from "../../in-game-notification/view";
+import LiveGoldRankingPage from "../../live-gold-ranking/view";
+import LivePlayerLevelsPage from "../../live-player-levels/view";
 import NotificationPage from "../../notification/view";
 import RoutesPage from "../../routes/view";
 
@@ -14,6 +16,11 @@ export type BrowserRoute = {
 export const browserRoutes: BrowserRoute[] = [
   { path: "/", label: "In-Game Notification", element: <InGameNotificationPage /> },
   { path: "/in-game-notification", label: "In-Game Notification", element: <InGameNotificationPage /> },
+  { path: "/broadcast/live-gold-ranking", label: "Broadcast Live Gold Ranking", element: <LiveGoldRankingPage /> },
+  { path: "/boradcast/live-gold-ranking", label: "Broadcast Live Gold Ranking", element: <LiveGoldRankingPage /> },
+  { path: "/broadcast/live-levels", label: "Broadcast Live Levels", element: <LivePlayerLevelsPage /> },
+  { path: "/boradcast/live-levels", label: "Broadcast Live Levels", element: <LivePlayerLevelsPage /> },
+  { path: "/live-player-levels", label: "Live Player Levels", element: <LivePlayerLevelsPage /> },
   { path: "/notification", label: "Notifications", element: <NotificationPage /> },
   { path: "/notiication", label: "Notifications", element: <NotificationPage /> },
   { path: "/routes", label: "Routes", element: <RoutesPage /> },
@@ -27,7 +34,15 @@ function resolveRoute(pathname: string) {
 export function AppRouter() {
   const activeRoute = resolveRoute(window.location.pathname);
 
-  if (activeRoute.path === "/" || activeRoute.path === "/in-game-notification") {
+  if (
+    activeRoute.path === "/" ||
+    activeRoute.path === "/in-game-notification" ||
+    activeRoute.path === "/broadcast/live-gold-ranking" ||
+    activeRoute.path === "/boradcast/live-gold-ranking" ||
+    activeRoute.path === "/broadcast/live-levels" ||
+    activeRoute.path === "/boradcast/live-levels" ||
+    activeRoute.path === "/live-player-levels"
+  ) {
     return activeRoute.element;
   }
 
