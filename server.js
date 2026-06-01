@@ -257,6 +257,25 @@ function sortByRolePost(players) {
   );
 }
 
+function orderPlayersByRoleForApi(players) {
+  const source = Array.isArray(players) ? players : [];
+  const used = new Set();
+
+  return ROLE_ORDER.map((role, index) => {
+    const foundIndex = source.findIndex((player, playerIndex) => {
+      if (used.has(playerIndex)) return false;
+      return (player.role || getAssignedRole(player.roleid)) === role;
+    });
+
+    if (foundIndex >= 0) {
+      used.add(foundIndex);
+      return source[foundIndex];
+    }
+
+    return source[index] || emptyPlayer();
+  });
+}
+
 function mapPostgamePlayersByRole(players) {
   const playersWithRoles = players.map((player, index) => ({
     ...player,
@@ -645,19 +664,23 @@ app.get("/postgame", (req, res) => {
 app.get("/players", (req, res) => {
   const d =
     ingameData || (postgameData ? buildIngameFallback(postgameData) : null);
-  if (d) res.json([...(d.left_team.players || []), ...(d.right_team.players || [])]);
+  if (d) {
+    const leftPlayers = orderPlayersByRoleForApi(d.left_team.players);
+    const rightPlayers = orderPlayersByRoleForApi(d.right_team.players);
+    res.json([...leftPlayers, ...rightPlayers]);
+  }
   else res.status(503).json({ error: "Data not ready yet" });
 });
 app.get("/players/left", (req, res) => {
   const d =
     ingameData || (postgameData ? buildIngameFallback(postgameData) : null);
-  if (d) res.json(d.left_team.players);
+  if (d) res.json(orderPlayersByRoleForApi(d.left_team.players));
   else res.status(503).json({ error: "Data not ready yet" });
 });
 app.get("/players/right", (req, res) => {
   const d =
     ingameData || (postgameData ? buildIngameFallback(postgameData) : null);
-  if (d) res.json(d.right_team.players);
+  if (d) res.json(orderPlayersByRoleForApi(d.right_team.players));
   else res.status(503).json({ error: "Data not ready yet" });
 });
 
