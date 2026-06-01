@@ -17,6 +17,13 @@ export type WsEnvelope<T = unknown> = {
   error?: string;
 };
 
+export type RoleAssignment = {
+  role: string;
+  sequence_number: number;
+};
+
+export type RoleAssignmentMap = Record<string, RoleAssignment>;
+
 export type Player = {
   name: string;
   role: string;
@@ -31,6 +38,7 @@ export type Player = {
   hero_image?: string;
   draft_hero_image?: string;
   campid?: string | number;
+  sequence_number?: number;
   kda?: string;
   kill_num?: number;
   dead_num?: number;

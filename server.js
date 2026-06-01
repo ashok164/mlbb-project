@@ -185,18 +185,73 @@ function calcGoldDiffs(leftPlayers, rightPlayers, goldField = "gold") {
   return diffs;
 }
 
+function getAssignedRole(roleid) {
+  const assignment = roleAssignments[String(roleid)];
+  if (assignment && typeof assignment === "object") return assignment.role ?? "";
+  return assignment ?? "";
+}
+
+function getAssignedSequence(roleid, fallback = 0) {
+  const assignment = roleAssignments[String(roleid)];
+  if (assignment && typeof assignment === "object") {
+    return Number(assignment.sequence_number ?? assignment.sequence ?? fallback) || fallback;
+  }
+  return fallback;
+}
+
+function hasAssignedSequence(players) {
+  return players.some((p) => getAssignedSequence(p.roleid, 0) > 0);
+}
+
+function normalizeRoleAssignments(input) {
+  const next = {};
+  Object.entries(input || {}).forEach(([roleid, value]) => {
+    const previous = roleAssignments[String(roleid)];
+    const previousRole =
+      previous && typeof previous === "object" ? previous.role : previous;
+    const previousSequence =
+      previous && typeof previous === "object" ? previous.sequence_number : 0;
+    const role =
+      value && typeof value === "object" ? value.role || previousRole : value;
+    const sequence =
+      value && typeof value === "object"
+        ? Number(value.sequence_number ?? value.sequence ?? previousSequence) || 0
+        : Number(previousSequence) || 0;
+    if (role) next[String(roleid)] = { role, sequence_number: sequence };
+  });
+  return next;
+}
+
 function sortByRole(players) {
+  if (hasAssignedSequence(players)) {
+    return [...players]
+      .sort(
+        (a, b) =>
+          getAssignedSequence(a.roleid, Number.MAX_SAFE_INTEGER) -
+          getAssignedSequence(b.roleid, Number.MAX_SAFE_INTEGER),
+      )
+      .slice(0, 5);
+  }
   return ROLE_ORDER.map(
     (role) =>
-      players.find((p) => roleAssignments[String(p.roleid)] === role) ||
+      players.find((p) => getAssignedRole(p.roleid) === role) ||
       emptyPlayer(),
   );
 }
 
 function sortByRolePost(players) {
+  if (hasAssignedSequence(players)) {
+    return [...players]
+      .sort(
+        (a, b) =>
+          getAssignedSequence(a.roleid, Number.MAX_SAFE_INTEGER) -
+          getAssignedSequence(b.roleid, Number.MAX_SAFE_INTEGER),
+      )
+      .slice(0, 5);
+  }
   return ROLE_ORDER.map(
     (role) =>
-      players.find((p) => roleAssignments[String(p.roleid)] === role) ||
+      players.find((p) => getAssignedRole(p.roleid) === role) ||
       emptyPostgamePlayer(),
   );
 }
@@ -609,7 +664,13 @@ app.get("/postgame/golddiff", (req, res) => {
 });
 
 app.post("/assign", (req, res) => {
-  roleAssignments = req.body;
+  const normalized = normalizeRoleAssignments(req.body);
+  if (Object.keys(normalized).length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, error: "No valid role assignments provided" });
+  }
+  roleAssignments = normalized;
   console.log("✅ Roles saved:", roleAssignments);
 
   // Re-clean cached data immediately so role shows up in JSON right away
@@ -684,17 +745,19 @@ app.get("/assign", (req, res) => {
       `<html><body style="background:#1a1a2e;color:white;font-family:Arial;padding:30px;"><h2>⏳ Data not ready yet. Please refresh.</h2></body></html>`,
     );
   const roles = ["exp", "mid", "roam", "jungle", "gold"];
-  const makeRows = (players) =>
+  const makeRows = (players, side) =>
     players
       .filter((p) => p.heroid)
       .map(
         (p) => `
-    <tr>
+    <tr draggable="true" data-roleid="${p.roleid}" data-side="${side}">
+      <td class="drag">↕</td>
+      <td class="seq"></td>
       <td><img src="http://localhost:${PORT}/hero-image/${p.heroid}" width="55" height="55" style="border-radius:8px;object-fit:cover;border:2px solid #e94560;" onerror="this.style.display='none'"/></td>
       <td style="font-weight:bold;">${p.name}</td>
       <td><select name="${p.roleid}" id="${p.roleid}">
         <option value="">-- Select Role --</option>
-        ${roles.map((r) => `<option value="${r}" ${roleAssignments[p.roleid] === r ? "selected" : ""}>${r.toUpperCase()}</option>`).join("")}
+        ${roles.map((r) => `<option value="${r}" ${getAssignedRole(p.roleid) === r ? "selected" : ""}>${r.toUpperCase()}</option>`).join("")}
       </select></td>
     </tr>`,
       )
@@ -708,6 +771,7 @@ app.get("/assign", (req, res) => {
     th{background:#0f3460;padding:10px 12px;text-align:left;font-size:13px;text-transform:uppercase;}
     td{padding:10px 12px;border-bottom:1px solid #2a2a4a;vertical-align:middle;}
     tr:hover td{background:#1f1f3a;}
+    tr.dragging{opacity:.45;} .drag{width:34px;color:#4ecca3;font-size:22px;cursor:grab;text-align:center;} .seq{width:60px;color:#4ecca3;font-weight:bold;}
     select{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;cursor:pointer;width:160px;}
     button{background:#e94560;color:white;padding:13px 35px;border:none;border-radius:5px;font-size:16px;cursor:pointer;margin-top:20px;}
     button:hover{background:#c73652;}#status{margin-top:15px;font-size:16px;color:#4ecca3;font-weight:bold;}
@@ -717,16 +781,51 @@ app.get("/assign", (req, res) => {
     <div class="info">🔑 Battle ID: ${BATTLE_ID}</div>
     <p>Assign roles once — applies to both ingame and postgame automatically.</p>
     <h2>LEFT TEAM — ${cachedData.left_team.name}</h2>
-    <table><tr><th>Hero</th><th>Player</th><th>Role</th></tr>${makeRows(cachedData.left_team.players)}</table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Role</th></tr><tbody data-side="left">${makeRows(cachedData.left_team.players, "left")}</tbody></table>
     <h2>RIGHT TEAM — ${cachedData.right_team.name}</h2>
-    <table><tr><th>Hero</th><th>Player</th><th>Role</th></tr>${makeRows(cachedData.right_team.players)}</table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Role</th></tr><tbody data-side="right">${makeRows(cachedData.right_team.players, "right")}</tbody></table>
     <button onclick="saveRoles()">💾 Save Role Assignments</button>
     <div id="status"></div>
     <script>
+      let draggedRow = null;
+      function updateSequences() {
+        document.querySelectorAll("tbody[data-side]").forEach(tbody => {
+          [...tbody.querySelectorAll("tr[data-roleid]")].forEach((row, index) => {
+            row.querySelector(".seq").innerText = index + 1;
+          });
+        });
+      }
+      function getDragAfterElement(container, y) {
+        const rows = [...container.querySelectorAll("tr[data-roleid]:not(.dragging)")];
+        return rows.reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) return { offset, element: child };
+          return closest;
+        }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+      }
+      document.querySelectorAll("tr[data-roleid]").forEach(row => {
+        row.addEventListener("dragstart", () => { draggedRow = row; row.classList.add("dragging"); });
+        row.addEventListener("dragend", () => { row.classList.remove("dragging"); draggedRow = null; updateSequences(); });
+      });
+      document.querySelectorAll("tbody[data-side]").forEach(tbody => {
+        tbody.addEventListener("dragover", event => {
+          event.preventDefault();
+          if (!draggedRow || draggedRow.dataset.side !== tbody.dataset.side) return;
+          const after = getDragAfterElement(tbody, event.clientY);
+          if (after == null) tbody.appendChild(draggedRow);
+          else tbody.insertBefore(draggedRow, after);
+        });
+      });
+      updateSequences();
       function saveRoles() {
-        const selects = document.querySelectorAll("select");
+        const rows = document.querySelectorAll("tr[data-roleid]");
         const assignments = {}; let missing = false;
-        selects.forEach(s => { if (!s.value) missing = true; else assignments[s.name] = s.value; });
+        rows.forEach(row => {
+          const select = row.querySelector("select");
+          if (!select.value) missing = true;
+          else assignments[row.dataset.roleid] = { role: select.value, sequence_number: Number(row.querySelector(".seq").innerText) || 0 };
+        });
         if (missing) { document.getElementById("status").style.color="#e94560"; document.getElementById("status").innerText="⚠️ Please assign all roles before saving!"; return; }
         fetch("/assign", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(assignments) })
         .then(r=>r.json()).then(()=>{ document.getElementById("status").style.color="#4ecca3"; document.getElementById("status").innerText="✅ Roles saved!"; })
@@ -769,7 +868,7 @@ function cleanIngamePlayer(p) {
 
   return {
     name: p.name ?? "",
-    role: roleAssignments[String(p.roleid)] ?? "unassigned",
+    role: getAssignedRole(p.roleid) || "unassigned",
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -780,6 +879,7 @@ function cleanIngamePlayer(p) {
       : "", // ✅ /images/drafthero-image/ with .png
     campid: p.campid ?? "",
     pos: p.pos ?? 0,
+    sequence_number: getAssignedSequence(p.roleid, p.pos ?? 0),
     kill_num: p.kill_num ?? 0,
     dead_num: p.dead_num ?? 0,
     assist_num: p.assist_num ?? 0,
@@ -835,6 +935,7 @@ function emptyPlayer() {
     draft_hero_image: "",
     campid: "",
     pos: 0,
+    sequence_number: 0,
     kill_num: 0,
     dead_num: 0,
     assist_num: 0,
@@ -980,7 +1081,7 @@ function cleanPostgamePlayer(p) {
 
   return {
     name: p.name ?? "",
-    role: roleAssignments[String(p.roleid)] ?? "unassigned",
+    role: getAssignedRole(p.roleid) || "unassigned",
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -989,6 +1090,7 @@ function cleanPostgamePlayer(p) {
       ? `http://localhost:${PORT}/drafthero-image/${String(p.heroid).trim()}.png`
       : "", // ✅ /images/drafthero-image/ with .png
     campid: p.campid ?? "",
+    sequence_number: getAssignedSequence(p.roleid, p.pos ?? 0),
     kill_num: p.kill_num ?? 0,
     dead_num: p.dead_num ?? 0,
     assist_num: p.assist_num ?? 0,
@@ -1035,6 +1137,7 @@ function emptyPostgamePlayer() {
     hero_image: "",
     draft_hero_image: "",
     campid: "",
+    sequence_number: 0,
     kill_num: 0,
     dead_num: 0,
     assist_num: 0,

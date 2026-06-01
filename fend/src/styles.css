@@ -390,7 +390,23 @@ code {
 }
 
 .control-row {
-  grid-template-columns: 48px minmax(0, 1fr) minmax(160px, 220px);
+  grid-template-columns: 36px 42px 48px minmax(0, 1fr) minmax(160px, 220px);
+  cursor: grab;
+}
+
+.control-row:active {
+  cursor: grabbing;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #34424d;
+  border-radius: 8px;
+  background: #101418;
+  color: #9fb0bd;
 }
 
 select {
@@ -466,7 +482,7 @@ select {
   }
 
   .control-row {
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: 36px 38px 44px minmax(0, 1fr);
   }
 
   .control-row select {

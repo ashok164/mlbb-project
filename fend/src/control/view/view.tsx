@@ -1,17 +1,19 @@
-import { Save } from "lucide-react";
-import type { MatchSnapshot, Player } from "../../types";
+import { GripVertical, Save } from "lucide-react";
+import type { MatchSnapshot, Player, RoleAssignmentMap } from "../../types";
 
 type Props = {
   snapshot: MatchSnapshot | null;
   players: Player[];
-  assignments: Record<string, string>;
+  assignments: RoleAssignmentMap;
+  sequenceByRoleid: Record<string, number>;
   roleOptions: string[];
   setRole: (roleid: string, role: string) => void;
+  movePlayer: (fromIndex: number, toIndex: number) => void;
   save: () => void;
   status: string;
 };
 
-export function ControlView({ snapshot, players, assignments, roleOptions, setRole, save, status }: Props) {
+export function ControlView({ snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, movePlayer, save, status }: Props) {
   return (
     <section className="page">
       <header className="page-header">
@@ -32,14 +34,28 @@ export function ControlView({ snapshot, players, assignments, roleOptions, setRo
           <span>{snapshot?.left_team.name || "Left"} / {snapshot?.right_team.name || "Right"}</span>
           <strong>{players.length} players</strong>
         </header>
-        {players.map((player) => (
-          <div className="control-row" key={player.roleid}>
+        {players.map((player, index) => (
+          <div
+            className="control-row"
+            draggable
+            key={player.roleid}
+            onDragStart={(event) => event.dataTransfer.setData("text/plain", String(index))}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              movePlayer(Number(event.dataTransfer.getData("text/plain")), index);
+            }}
+          >
+            <button className="icon-button" type="button" aria-label="Drag player">
+              <GripVertical size={18} />
+            </button>
+            <strong>#{sequenceByRoleid[player.roleid] || index + 1}</strong>
             <img alt="" src={player.draft_hero_image || player.hero_image} />
             <div>
               <strong>{player.name}</strong>
               <span>Role ID {player.roleid}</span>
             </div>
-            <select value={assignments[player.roleid] || ""} onChange={(event) => setRole(player.roleid, event.target.value)}>
+            <select value={assignments[player.roleid]?.role || ""} onChange={(event) => setRole(player.roleid, event.target.value)}>
               <option value="">Select role</option>
               {roleOptions.map((role) => (
                 <option value={role} key={role}>{role.toUpperCase()}</option>
