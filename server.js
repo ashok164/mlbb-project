@@ -645,7 +645,7 @@ app.get("/postgame", (req, res) => {
 app.get("/players", (req, res) => {
   const d =
     ingameData || (postgameData ? buildIngameFallback(postgameData) : null);
-  if (d) res.json(d.all_players);
+  if (d) res.json([...(d.left_team.players || []), ...(d.right_team.players || [])]);
   else res.status(503).json({ error: "Data not ready yet" });
 });
 app.get("/players/left", (req, res) => {
@@ -663,7 +663,11 @@ app.get("/players/right", (req, res) => {
 
 // ✅ /postgame/players — always postgameData — hero_image = /images/postheros/
 app.get("/postgame/players", (req, res) => {
-  if (postgameData) res.json(postgameData.all_players);
+  if (postgameData)
+    res.json([
+      ...(postgameData.left_team.players || []),
+      ...(postgameData.right_team.players || []),
+    ]);
   else res.status(503).json({ error: "No postgame data yet" });
 });
 app.get("/postgame/players/left", (req, res) => {
