@@ -257,9 +257,18 @@ function sortByRolePost(players) {
   );
 }
 
-function mapPostgameStaticRoles(players) {
+function mapPostgamePlayersByRole(players) {
+  const playersWithRoles = players.map((player, index) => ({
+    ...player,
+    role:
+      player.role && player.role !== "unassigned"
+        ? player.role
+        : POSTGAME_ROLE_ORDER[index] || "unassigned",
+  }));
+
   return POSTGAME_ROLE_ORDER.map((role, index) => {
-    const player = players[index] || emptyPostgamePlayer();
+    const player =
+      playersWithRoles.find((p) => p.role === role) || emptyPostgamePlayer();
     return {
       ...player,
       role,
@@ -1210,8 +1219,8 @@ function cleanPostgame(raw) {
     .filter((p) => p.campid === 2)
     .map(cleanPostgamePlayer);
 
-  leftPlayers = mapPostgameStaticRoles(leftPlayers);
-  rightPlayers = mapPostgameStaticRoles(rightPlayers);
+  leftPlayers = mapPostgamePlayersByRole(leftPlayers);
+  rightPlayers = mapPostgamePlayersByRole(rightPlayers);
 
   const leftGoldRaw = leftPlayers.reduce(
     (s, p) => s + (Number(p.total_money) || 0),
