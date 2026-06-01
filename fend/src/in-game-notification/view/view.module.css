@@ -13,7 +13,7 @@
   display: grid;
   width: 175px;
   min-width: 175px;
-  gap: 10px;
+  gap: 0;
   transform: translateY(-50%);
   pointer-events: none;
 }

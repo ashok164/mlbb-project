@@ -62,6 +62,7 @@ const WS_ENDPOINTS = new Set([
 ]);
 
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
+const POSTGAME_ROLE_ORDER = ["roam", "exp", "gold", "jungle", "mid"];
 const TXT_DIR = __dirname;
 
 const lastKnown = {
@@ -167,9 +168,9 @@ function updateTurtle(value, stateKey, timeKey, filename, key) {
   writeTxtSafe(filename, turtleState[stateKey], key);
 }
 
-function calcGoldDiffs(leftPlayers, rightPlayers, goldField = "gold") {
+function calcGoldDiffs(leftPlayers, rightPlayers, goldField = "gold", roleOrder = ROLE_ORDER) {
   const diffs = {};
-  ROLE_ORDER.forEach((role, i) => {
+  roleOrder.forEach((role, i) => {
     const leftGold = Number(leftPlayers[i]?.[goldField]) || 0;
     const rightGold = Number(rightPlayers[i]?.[goldField]) || 0;
     const diff = leftGold - rightGold;
@@ -254,6 +255,17 @@ function sortByRolePost(players) {
       players.find((p) => getAssignedRole(p.roleid) === role) ||
       emptyPostgamePlayer(),
   );
+}
+
+function mapPostgameStaticRoles(players) {
+  return POSTGAME_ROLE_ORDER.map((role, index) => {
+    const player = players[index] || emptyPostgamePlayer();
+    return {
+      ...player,
+      role,
+      sequence_number: index + 1,
+    };
+  });
 }
 
 // ================================================================
@@ -1198,13 +1210,8 @@ function cleanPostgame(raw) {
     .filter((p) => p.campid === 2)
     .map(cleanPostgamePlayer);
 
-  if (Object.keys(roleAssignments).length > 0) {
-    leftPlayers = sortByRolePost(leftPlayers);
-    rightPlayers = sortByRolePost(rightPlayers);
-  } else {
-    while (leftPlayers.length < 5) leftPlayers.push(emptyPostgamePlayer());
-    while (rightPlayers.length < 5) rightPlayers.push(emptyPostgamePlayer());
-  }
+  leftPlayers = mapPostgameStaticRoles(leftPlayers);
+  rightPlayers = mapPostgameStaticRoles(rightPlayers);
 
   const leftGoldRaw = leftPlayers.reduce(
     (s, p) => s + (Number(p.total_money) || 0),
@@ -1222,19 +1229,24 @@ function cleanPostgame(raw) {
     (s, p) => s + (Number(p.dead_num) || 0),
     0,
   );
-  const goldDiff = calcGoldDiffs(leftPlayers, rightPlayers, "total_money");
+  const goldDiff = calcGoldDiffs(
+    leftPlayers,
+    rightPlayers,
+    "total_money",
+    POSTGAME_ROLE_ORDER,
+  );
 
   leftPlayers = leftPlayers.map((p, i) => ({
     ...p,
-    left_gold_diff: goldDiff[ROLE_ORDER[i]]?.left_gold_diff ?? "",
-    right_gold_diff: goldDiff[ROLE_ORDER[i]]?.right_gold_diff ?? "",
-    gold_leader: goldDiff[ROLE_ORDER[i]]?.leader ?? "even",
+    left_gold_diff: goldDiff[POSTGAME_ROLE_ORDER[i]]?.left_gold_diff ?? "",
+    right_gold_diff: goldDiff[POSTGAME_ROLE_ORDER[i]]?.right_gold_diff ?? "",
+    gold_leader: goldDiff[POSTGAME_ROLE_ORDER[i]]?.leader ?? "even",
   }));
   rightPlayers = rightPlayers.map((p, i) => ({
     ...p,
-    left_gold_diff: goldDiff[ROLE_ORDER[i]]?.left_gold_diff ?? "",
-    right_gold_diff: goldDiff[ROLE_ORDER[i]]?.right_gold_diff ?? "",
-    gold_leader: goldDiff[ROLE_ORDER[i]]?.leader ?? "even",
+    left_gold_diff: goldDiff[POSTGAME_ROLE_ORDER[i]]?.left_gold_diff ?? "",
+    right_gold_diff: goldDiff[POSTGAME_ROLE_ORDER[i]]?.right_gold_diff ?? "",
+    gold_leader: goldDiff[POSTGAME_ROLE_ORDER[i]]?.leader ?? "even",
   }));
 
   return {

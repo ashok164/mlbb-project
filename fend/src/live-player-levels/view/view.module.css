@@ -14,7 +14,7 @@
   z-index: 5;
   display: grid;
   grid-auto-rows: 87px;
-  gap: 10px;
+  gap: 0;
   width: 260px;
   transform: translateY(-50%);
 }
@@ -48,12 +48,26 @@
 }
 
 .deadCard {
-  opacity: 0.52;
+  filter: grayscale(0.35) brightness(0.78);
 }
 
 .deadCard.eliminatedCard {
-  opacity: 1;
-  animation: dimAfterEliminated 0.01s linear 2.6s forwards;
+  filter: none;
+  animation: fadeAfterEliminated 0.01s linear 2.6s forwards;
+}
+
+.deadCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.34);
+  animation: deadFadeIn 0.18s ease-out both;
+}
+
+.deadCard.eliminatedCard::after {
+  animation: deadFadeIn 0.18s ease-out 2.6s both;
 }
 
 .lastSurvivorCard {
@@ -307,9 +321,19 @@
   }
 }
 
-@keyframes dimAfterEliminated {
+@keyframes deadFadeIn {
+  from {
+    background: rgba(0, 0, 0, 0);
+  }
+
   to {
-    opacity: 0.52;
+    background: rgba(0, 0, 0, 0.34);
+  }
+}
+
+@keyframes fadeAfterEliminated {
+  to {
+    filter: grayscale(0.35) brightness(0.78);
   }
 }
 
