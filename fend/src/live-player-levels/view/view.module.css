@@ -16,7 +16,7 @@
   grid-auto-rows: 87px;
   gap: 0;
   width: 260px;
-  transform: translateY(-50%);
+  transform: translateY(calc(-50% + 14px));
 }
 
 .leftStack {

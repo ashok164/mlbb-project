@@ -62,7 +62,7 @@ const WS_ENDPOINTS = new Set([
 ]);
 
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
-const POSTGAME_ROLE_ORDER = ["roam", "exp", "gold", "jungle", "mid"];
+const POSTGAME_ROLE_ORDER = ROLE_ORDER;
 const TXT_DIR = __dirname;
 
 const lastKnown = {

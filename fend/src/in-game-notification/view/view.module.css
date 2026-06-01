@@ -14,7 +14,7 @@
   width: 175px;
   min-width: 175px;
   gap: 0;
-  transform: translateY(-50%);
+  transform: translateY(calc(-50% + 14px));
   pointer-events: none;
 }
 
