@@ -30,16 +30,32 @@ export function LevelUpCard({ notification }: Props) {
   }
 
   if (notification.type === "equipment") {
-    const itemSlots = Array.from({ length: 6 }, (_, index) => notification.itemImages[index] || "");
-    const slotColumn = notification.itemIndex % 3;
-    const slotRow = Math.floor(notification.itemIndex / 3);
-    const leftTravelXByColumn = [154, 115, 76];
-    const rightTravelXByColumn = [146, 108, 70];
-    const travelX = (isRight ? rightTravelXByColumn : leftTravelXByColumn)[slotColumn] ?? 154;
-    const travelY = slotRow === 0 ? -15 : 15;
+    const displaySlotOrder = isRight ? [2, 1, 0, 5, 4, 3] : [0, 1, 2, 3, 4, 5];
+    const orderedItemImages = displaySlotOrder.map((sourceIndex) =>
+      sourceIndex === notification.itemIndex ? "" : notification.itemImages[sourceIndex] || "",
+    );
+    const itemSlots = Array.from({ length: 6 }, (_, index) => orderedItemImages[index] || "");
+    const displayItemIndex = Math.max(0, displaySlotOrder.indexOf(notification.itemIndex));
+    const leftTargets = [
+      { x: -150, y: -15 },
+      { x: -115, y: -15 },
+      { x: -76, y: -15 },
+      { x: -154, y: -15 },
+      { x: -115, y: -15 },
+      { x: -76, y: -15 }
+    ];
+    const rightTargets = [
+      { x: 76, y: -15 },
+      { x: 115, y: -15 },
+      { x: 154, y: -15 },
+      { x: 76, y: 15 },
+      { x: 115, y: 15 },
+      { x: 154, y: 15 }
+    ];
+    const target = (isRight ? rightTargets : leftTargets)[displayItemIndex] || { x: 0, y: 0 };
     const flyingItemStyle = {
-      "--item-travel-x": `${isRight ? travelX : -travelX}px`,
-      "--item-travel-y": `${travelY}px`
+      "--item-travel-x": `${target.x}px`,
+      "--item-travel-y": `${target.y}px`
     } as CSSProperties;
 
     return (
@@ -71,23 +87,16 @@ export function LevelUpCard({ notification }: Props) {
         <div className={styles.equipmentStripe}>{notification.playerName}</div>
         <div className={styles.prioritySlots}>
           {itemSlots.map((itemImage, index) => {
-            const isNewItemSlot = index === notification.itemIndex;
-
             return (
               <div className={styles.prioritySlot} key={`${notification.id}-${index}`}>
-                {itemImage && !isNewItemSlot && (
-                  <img
-                    alt=""
-                    src={itemImage}
-                  />
-                )}
-                {itemImage && isNewItemSlot && <img alt="" className={styles.newPriorityItem} src={itemImage} />}
+                {itemImage && <img alt="" src={itemImage} />}
               </div>
             );
           })}
         </div>
         <div className={styles.equipmentContent}>
           <div className={styles.itemFrame}>
+            <img className={styles.finalPriorityItem} alt="" src={notification.itemImage} />
             <img className={styles.flyingItem} style={flyingItemStyle} alt={`Item ${notification.itemId}`} src={notification.itemImage} />
           </div>
         </div>

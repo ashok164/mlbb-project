@@ -398,6 +398,11 @@
   animation: revealPriorityItem 3600ms cubic-bezier(0.2, 0.82, 0.18, 1) both;
 }
 
+.finalPriorityItem {
+  opacity: 0;
+  animation: revealPriorityItem 3600ms cubic-bezier(0.2, 0.82, 0.18, 1) both;
+}
+
 .equipmentContent {
   display: grid;
   grid-row: 1 / -1;
@@ -423,10 +428,13 @@
   width: 68px;
   height: 68px;
   place-items: center;
+  align-items: center;
+  justify-items: center;
   overflow: visible;
   border-radius: 50%;
   background: #ff9d00;
   box-shadow: 0 0 0 2px #111321;
+  position: relative;
 }
 
 .leftEquipmentCard .itemFrame {
@@ -442,6 +450,10 @@
   height: 58px;
   background: transparent;
   object-fit: contain;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .leftEquipmentCard .flyingItem {
@@ -449,19 +461,19 @@
 }
 
 .rightEquipmentCard .flyingItem {
-  animation: itemPrioritySettle 3600ms ease-in-out both;
+  animation: itemPrioritySettleRight 3600ms ease-in-out both;
 }
 
 @keyframes revealPriorityItem {
   0%,
   86% {
     opacity: 0;
-    transform: scale(0.4);
+    transform: translate(-50%, -50%) scale(0.4);
   }
   94%,
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -469,16 +481,33 @@
   0%,
   22% {
     opacity: 1;
-    transform: translate(0, 0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
   56%,
   92% {
     opacity: 1;
-    transform: translate(var(--item-travel-x), var(--item-travel-y)) scale(0.43);
+    transform: translate(calc(-50% + var(--item-travel-x)), calc(-50% + var(--item-travel-y))) scale(0.43);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--item-travel-x), var(--item-travel-y)) scale(0.43);
+    transform: translate(calc(-50% + var(--item-travel-x)), calc(-50% + var(--item-travel-y))) scale(0.43);
+  }
+}
+
+@keyframes itemPrioritySettleRight {
+  0%,
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  56%,
+  92% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--item-travel-x)), calc(-50% + var(--item-travel-y))) scale(0.43);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--item-travel-x)), calc(-50% + var(--item-travel-y))) scale(0.43);
   }
 }
 
