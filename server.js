@@ -26,7 +26,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
-app.use("/notification-assets", express.static("C:/Users/SARTHAK/Desktop/mlbbnotifcation"));
+app.use("/notification-assets", express.static(path.join(__dirname, "fend", "Public", "mlbbNotification")));
 
 let cachedData = null;
 let ingameData = null;
