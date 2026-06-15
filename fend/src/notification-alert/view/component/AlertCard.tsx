@@ -12,9 +12,7 @@ export function AlertCard({ alert }: Props) {
   const isSlainAlert =
     alert.trigger === "turtle_slain" ||
     alert.trigger === "lord_slain";
-  const spellImage = alert.killer_spell_image
-    ? alert.killer_spell_image.replace("/Public/", "/")
-    : "";
+  const spellImage = alert.killer_spell_image || "";
 
   return (
     <div

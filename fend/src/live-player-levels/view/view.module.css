@@ -254,17 +254,6 @@
     overlaySwipeOutLeft 1.15s ease-in 1.45s forwards;
 }
 
-.eliminatedOverlay::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(196px, calc(100% - 16px));
-  height: 32px;
-  background: url("/Public/mlbbNotification/nameplate.png") center / 100% 100% no-repeat;
-  transform: translate(-50%, -50%);
-}
-
 .eliminatedOverlay::after {
   content: "";
   position: absolute;

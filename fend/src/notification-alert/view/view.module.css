@@ -55,14 +55,16 @@
 
 .playerName {
   width: 100%;
-  padding: 0 14px 0 42px;
+  padding: 0 42px;
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
   color: #ffffff;
   font-family: Impact, "Arial Black", sans-serif;
   font-size: 14px;
   line-height: 1;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -101,10 +103,10 @@
 
 .spellIcon {
   position: absolute;
-  left: 4px;
-  top: 3px;
-  width: 34px;
-  height: 34px;
+  left: 8px;
+  top: 4px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 50%;
   background: transparent;

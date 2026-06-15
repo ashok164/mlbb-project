@@ -70,8 +70,8 @@
 
 .rows {
   display: grid;
-  gap: 10px;
-  padding: 9px 10px 10px 8px;
+  gap: 6px;
+  padding: 7px 10px 8px 8px;
 }
 
 .row {
@@ -81,7 +81,7 @@
   column-gap: 10px;
   row-gap: 0;
   align-items: end;
-  min-height: 60px;
+  min-height: 54px;
   padding: 0 4px 0 0;
 }
 
@@ -132,16 +132,16 @@
   display: grid;
   grid-template-rows: auto auto;
   align-content: start;
-  padding-top: 9px;
+  padding-top: 4px;
   padding-right: 0;
   padding-bottom: 0;
 }
 
 .topLine {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 10px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 8px;
+  align-items: start;
 }
 
 .topLine strong,
@@ -156,19 +156,19 @@
 
 .topLine strong {
   color: #f59a0b;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   letter-spacing: 0.2px;
 }
 
 .topLine span {
   display: grid;
-  min-width: 34px;
-  height: 34px;
+  min-width: 28px;
+  height: 28px;
   place-items: center;
   background: #ff9900;
   color: #ffffff;
-  font-size: 19px;
+  font-size: 16px;
   line-height: 1;
   letter-spacing: 0.2px;
 }
@@ -176,7 +176,7 @@
 .heroKey {
   margin-top: 2px;
   color: #686868;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
 }
 
