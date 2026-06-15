@@ -2,6 +2,7 @@ const express = require("express");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const http = require("http");
+const https = require("https");
 const path = require("path");
 const readline = require("readline");
 const WebSocket = require("ws");
@@ -37,6 +38,7 @@ let POSTGAME_URL = "";
 let refreshInterval = null;
 let timerInterval = null;
 let storedRuneIds = {};
+let isRefreshing = false;
 
 let localGameTime = 0;
 let lastApiGameTime = 0;
@@ -64,6 +66,11 @@ const WS_ENDPOINTS = new Set([
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
 const POSTGAME_ROLE_ORDER = ROLE_ORDER;
 const TXT_DIR = __dirname;
+const API_AUTH_TOKEN = "1c7c9de5798a010e8f7da8ab5b82d953";
+const API_HTTPS_AGENT = new https.Agent({
+  keepAlive: true,
+  maxSockets: 4,
+});
 
 const lastKnown = {
   left_gold: "0",
@@ -157,6 +164,37 @@ function writeTxt(filename, value) {
   } catch (e) {}
 }
 
+function shouldRetryFetch(err) {
+  const code = err?.code || err?.errno || "";
+  return ["ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"].includes(code);
+}
+
+async function fetchJsonWithRetry(url, attempts = 2) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        agent: API_HTTPS_AGENT,
+        timeout: 5000,
+        headers: { Authorization: `Bearer ${API_AUTH_TOKEN}` },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      lastError = err;
+      if (!shouldRetryFetch(err) || attempt === attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+    }
+  }
+
+  throw lastError;
+}
+
 function updateTurtle(value, stateKey, timeKey, filename, key) {
   if (value !== null && value !== undefined) {
     turtleState[stateKey] = String(value);
@@ -200,6 +238,14 @@ function getAssignedSequence(roleid, fallback = 0) {
   return fallback;
 }
 
+function getAssignedHeroName(roleid) {
+  const assignment = roleAssignments[String(roleid)];
+  if (assignment && typeof assignment === "object") {
+    return String(assignment.hero_name ?? "").trim();
+  }
+  return "";
+}
+
 function hasAssignedSequence(players) {
   return players.some((p) => getAssignedSequence(p.roleid, 0) > 0);
 }
@@ -212,13 +258,19 @@ function normalizeRoleAssignments(input) {
       previous && typeof previous === "object" ? previous.role : previous;
     const previousSequence =
       previous && typeof previous === "object" ? previous.sequence_number : 0;
+    const previousHeroName =
+      previous && typeof previous === "object" ? previous.hero_name : "";
     const role =
       value && typeof value === "object" ? value.role || previousRole : value;
     const sequence =
       value && typeof value === "object"
         ? Number(value.sequence_number ?? value.sequence ?? previousSequence) || 0
         : Number(previousSequence) || 0;
-    if (role) next[String(roleid)] = { role, sequence_number: sequence };
+    const heroName =
+      value && typeof value === "object"
+        ? String(value.hero_name ?? previousHeroName ?? "").trim()
+        : String(previousHeroName ?? "").trim();
+    if (role) next[String(roleid)] = { role, sequence_number: sequence, hero_name: heroName };
   });
   return next;
 }
@@ -427,11 +479,10 @@ function updateTextFiles(raw) {
 function startRefresh() {
   if (refreshInterval) clearInterval(refreshInterval);
   refreshInterval = setInterval(async () => {
+    if (isRefreshing) return;
+    isRefreshing = true;
     try {
-      const ingameRes = await fetch(INGAME_URL, {
-        headers: { Authorization: "Bearer 1c7c9de5798a010e8f7da8ab5b82d953" },
-      });
-      const ingameRaw = await ingameRes.json();
+      const ingameRaw = await fetchJsonWithRetry(INGAME_URL);
       const state = ingameRaw?.data?.state ?? "";
 
       if (state === "end" || state === "") {
@@ -444,10 +495,7 @@ function startRefresh() {
           lastIngameRaw = ingameRaw;
           ingameData = cleanIngame(ingameRaw);
         }
-        const postRes = await fetch(POSTGAME_URL, {
-          headers: { Authorization: "Bearer 1c7c9de5798a010e8f7da8ab5b82d953" },
-        });
-        const postRaw = await postRes.json();
+        const postRaw = await fetchJsonWithRetry(POSTGAME_URL);
         lastPostgameRaw = postRaw;
         postgameData = cleanPostgame(postRaw);
         cachedData = postgameData;
@@ -481,7 +529,9 @@ function startRefresh() {
         broadcastWsPayloads();
       }
     } catch (err) {
-      console.error("Refresh error:", err.message);
+      console.error("Refresh error:", err.code || err.name || "UNKNOWN", err.message);
+    } finally {
+      isRefreshing = false;
     }
   }, 1000);
 }
@@ -623,10 +673,7 @@ app.get("/raw", async (req, res) => {
   if (!INGAME_URL)
     return res.status(503).json({ error: "Battle ID not set yet" });
   try {
-    const r = await fetch(INGAME_URL, {
-      headers: { Authorization: "Bearer 1c7c9de5798a010e8f7da8ab5b82d953" },
-    });
-    res.json(await r.json());
+    res.json(await fetchJsonWithRetry(INGAME_URL));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -636,10 +683,7 @@ app.get("/raw/post", async (req, res) => {
   if (!POSTGAME_URL)
     return res.status(503).json({ error: "Battle ID not set yet" });
   try {
-    const r = await fetch(POSTGAME_URL, {
-      headers: { Authorization: "Bearer 1c7c9de5798a010e8f7da8ab5b82d953" },
-    });
-    res.json(await r.json());
+    res.json(await fetchJsonWithRetry(POSTGAME_URL));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -803,6 +847,7 @@ app.get("/assign", (req, res) => {
       <td class="seq"></td>
       <td><img src="http://localhost:${PORT}/hero-image/${p.heroid}" width="55" height="55" style="border-radius:8px;object-fit:cover;border:2px solid #e94560;" onerror="this.style.display='none'"/></td>
       <td style="font-weight:bold;">${p.name}</td>
+      <td><input type="text" class="hero-name" value="${String(getAssignedHeroName(p.roleid)).replace(/"/g, "&quot;")}" placeholder="Assigned hero name" /></td>
       <td><select name="${p.roleid}" id="${p.roleid}">
         <option value="">-- Select Role --</option>
         ${roles.map((r) => `<option value="${r}" ${getAssignedRole(p.roleid) === r ? "selected" : ""}>${r.toUpperCase()}</option>`).join("")}
@@ -820,7 +865,9 @@ app.get("/assign", (req, res) => {
     td{padding:10px 12px;border-bottom:1px solid #2a2a4a;vertical-align:middle;}
     tr:hover td{background:#1f1f3a;}
     tr.dragging{opacity:.45;} .drag{width:34px;color:#4ecca3;font-size:22px;cursor:grab;text-align:center;} .seq{width:60px;color:#4ecca3;font-weight:bold;}
-    select{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;cursor:pointer;width:160px;}
+    select,.hero-name{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;width:160px;}
+    select{cursor:pointer;}
+    .hero-name::placeholder{color:#9bb0bf;}
     button{background:#e94560;color:white;padding:13px 35px;border:none;border-radius:5px;font-size:16px;cursor:pointer;margin-top:20px;}
     button:hover{background:#c73652;}#status{margin-top:15px;font-size:16px;color:#4ecca3;font-weight:bold;}
     .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:bold;margin-left:10px;background:${currentState === "ingame" ? "#4ecca3" : "#e94560"};color:#1a1a2e;}
@@ -829,9 +876,9 @@ app.get("/assign", (req, res) => {
     <div class="info">🔑 Battle ID: ${BATTLE_ID}</div>
     <p>Assign roles once — applies to both ingame and postgame automatically.</p>
     <h2>LEFT TEAM — ${cachedData.left_team.name}</h2>
-    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Role</th></tr><tbody data-side="left">${makeRows(cachedData.left_team.players, "left")}</tbody></table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="left">${makeRows(cachedData.left_team.players, "left")}</tbody></table>
     <h2>RIGHT TEAM — ${cachedData.right_team.name}</h2>
-    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Role</th></tr><tbody data-side="right">${makeRows(cachedData.right_team.players, "right")}</tbody></table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="right">${makeRows(cachedData.right_team.players, "right")}</tbody></table>
     <button onclick="saveRoles()">💾 Save Role Assignments</button>
     <div id="status"></div>
     <script>
@@ -871,8 +918,9 @@ app.get("/assign", (req, res) => {
         const assignments = {}; let missing = false;
         rows.forEach(row => {
           const select = row.querySelector("select");
+          const heroName = row.querySelector(".hero-name")?.value || "";
           if (!select.value) missing = true;
-          else assignments[row.dataset.roleid] = { role: select.value, sequence_number: Number(row.querySelector(".seq").innerText) || 0 };
+          else assignments[row.dataset.roleid] = { role: select.value, sequence_number: Number(row.querySelector(".seq").innerText) || 0, hero_name: heroName };
         });
         if (missing) { document.getElementById("status").style.color="#e94560"; document.getElementById("status").innerText="⚠️ Please assign all roles before saving!"; return; }
         fetch("/assign", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(assignments) })
@@ -917,6 +965,7 @@ function cleanIngamePlayer(p) {
   return {
     name: p.name ?? "",
     role: getAssignedRole(p.roleid) || "unassigned",
+    assigned_hero_name: getAssignedHeroName(p.roleid),
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -954,6 +1003,7 @@ function cleanIngamePlayer(p) {
     skillid: p.skillid ?? "",
     spell_image: spellImg(p.skillid),
     skill_left_time: p.skill_left_time ?? 0,
+    major_left_time: p.major_left_time ?? 0,
     control_time_ms: p.control_time_ms ?? 0,
     physical_defense: p.physical_defense ?? 0,
     magic_defense: p.magic_defense ?? 0,
@@ -975,6 +1025,7 @@ function emptyPlayer() {
   return {
     name: "",
     role: "unassigned",
+    assigned_hero_name: "",
     roleid: "",
     playerpic_image: "",
     heroid: "",
@@ -1010,6 +1061,7 @@ function emptyPlayer() {
     skillid: "",
     spell_image: "",
     skill_left_time: 0,
+    major_left_time: 0,
     control_time_ms: 0,
     physical_defense: 0,
     magic_defense: 0,
@@ -1130,6 +1182,7 @@ function cleanPostgamePlayer(p) {
   return {
     name: p.name ?? "",
     role: getAssignedRole(p.roleid) || "unassigned",
+    assigned_hero_name: getAssignedHeroName(p.roleid),
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -1179,6 +1232,7 @@ function emptyPostgamePlayer() {
   return {
     name: "",
     role: "unassigned",
+    assigned_hero_name: "",
     roleid: "",
     playerpic_image: "",
     heroid: "",

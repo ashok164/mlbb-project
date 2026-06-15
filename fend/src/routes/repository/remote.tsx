@@ -37,6 +37,18 @@ export function getOverlayRoutes(): OverlayRouteLink[] {
       path: "/broadcast/live-gold-ranking",
       url: "/broadcast/live-gold-ranking",
       description: "Live all-player gold ranking overlay with player picture, name, character, and gold."
+    },
+    {
+      label: "Broadcast Team Gold Ranking",
+      path: "/broadcast/team-gold-ranking",
+      url: "/broadcast/team-gold-ranking",
+      description: "Separate left and right team gold ranking overlay with capped 100K progress bars."
+    },
+    {
+      label: "Broadcast Team Level Ranking",
+      path: "/broadcast/team-level-ranking",
+      url: "/broadcast/team-level-ranking",
+      description: "Combined team level ranking overlay with player portraits and level progress bars."
     }
   ];
 }

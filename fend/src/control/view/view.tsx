@@ -8,12 +8,13 @@ type Props = {
   sequenceByRoleid: Record<string, number>;
   roleOptions: string[];
   setRole: (roleid: string, role: string) => void;
+  setHeroName: (roleid: string, heroName: string) => void;
   movePlayer: (fromIndex: number, toIndex: number) => void;
   save: () => void;
   status: string;
 };
 
-export function ControlView({ snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, movePlayer, save, status }: Props) {
+export function ControlView({ snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, movePlayer, save, status }: Props) {
   return (
     <section className="page">
       <header className="page-header">
@@ -34,6 +35,14 @@ export function ControlView({ snapshot, players, assignments, sequenceByRoleid, 
           <span>{snapshot?.left_team.name || "Left"} / {snapshot?.right_team.name || "Right"}</span>
           <strong>{players.length} players</strong>
         </header>
+        <div className="control-columns">
+          <span />
+          <span>Seq</span>
+          <span>Hero</span>
+          <span>Player</span>
+          <span>Hero Name</span>
+          <span>Role</span>
+        </div>
         {players.map((player, index) => (
           <div
             className="control-row"
@@ -55,6 +64,13 @@ export function ControlView({ snapshot, players, assignments, sequenceByRoleid, 
               <strong>{player.name}</strong>
               <span>Role ID {player.roleid}</span>
             </div>
+            <input
+              className="control-text-input"
+              type="text"
+              placeholder="Assigned hero name"
+              value={assignments[player.roleid]?.hero_name || player.assigned_hero_name || ""}
+              onChange={(event) => setHeroName(player.roleid, event.target.value)}
+            />
             <select value={assignments[player.roleid]?.role || ""} onChange={(event) => setRole(player.roleid, event.target.value)}>
               <option value="">Select role</option>
               {roleOptions.map((role) => (

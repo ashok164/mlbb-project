@@ -37,7 +37,8 @@ export function useControlController() {
           if (player.roleid && player.role && player.role !== "unassigned") {
             initial[player.roleid] = {
               role: player.role,
-              sequence_number: player.sequence_number || sequence_number
+              sequence_number: player.sequence_number || sequence_number,
+              hero_name: player.assigned_hero_name || ""
             };
           }
         });
@@ -65,7 +66,19 @@ export function useControlController() {
       ...current,
       [roleid]: {
         role,
-        sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1
+        sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
+        hero_name: current[roleid]?.hero_name || ""
+      }
+    }));
+  };
+
+  const setHeroName = (roleid: string, hero_name: string) => {
+    setAssignments((current) => ({
+      ...current,
+      [roleid]: {
+        role: current[roleid]?.role || players.find((player) => player.roleid === roleid)?.role || "",
+        sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
+        hero_name
       }
     }));
   };
@@ -83,7 +96,8 @@ export function useControlController() {
         if (!player.roleid) return;
         next[player.roleid] = {
           role: next[player.roleid]?.role || player.role || "",
-          sequence_number
+          sequence_number,
+          hero_name: next[player.roleid]?.hero_name || player.assigned_hero_name || ""
         };
       });
       return next;
@@ -104,7 +118,8 @@ export function useControlController() {
         if (!player.roleid) return;
         payload[player.roleid] = {
           role: payload[player.roleid]?.role || player.role || "",
-          sequence_number
+          sequence_number,
+          hero_name: payload[player.roleid]?.hero_name || player.assigned_hero_name || ""
         };
       });
       await saveRoleAssignments(payload);
@@ -114,5 +129,5 @@ export function useControlController() {
     }
   };
 
-  return { snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, movePlayer, save, status };
+  return { snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, movePlayer, save, status };
 }

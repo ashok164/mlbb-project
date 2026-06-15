@@ -20,6 +20,7 @@ export type WsEnvelope<T = unknown> = {
 export type RoleAssignment = {
   role: string;
   sequence_number: number;
+  hero_name?: string;
 };
 
 export type RoleAssignmentMap = Record<string, RoleAssignment>;
@@ -48,6 +49,7 @@ export type Player = {
   total_money?: number;
   total_money_k?: string;
   level?: number;
+  assigned_hero_name?: string;
   skillid?: string | number;
   spell_image?: string;
   rune_id?: string | number;
@@ -60,6 +62,8 @@ export type Player = {
   rune_talent_3_image?: string;
   dead?: boolean;
   revive_left_time?: number;
+  skill_left_time?: number;
+  major_left_time?: number;
   hp_pct?: number;
   mana_pct?: number;
   left_gold_diff?: string;

@@ -4,6 +4,8 @@ import { Bell, Coins, ListTree, Rows3, SlidersHorizontal, Sparkles } from "lucid
 const navItems = [
   { path: "/in-game-notification", label: "In-Game" },
   { path: "/broadcast/live-gold-ranking", label: "Gold Ranking" },
+  { path: "/broadcast/team-gold-ranking", label: "Team Gold" },
+  { path: "/broadcast/team-level-ranking", label: "Team Level" },
   { path: "/broadcast/live-levels", label: "Broadcast Levels" },
   { path: "/notification", label: "Notifications" },
   { path: "/routes", label: "Routes" },
@@ -13,6 +15,8 @@ const navItems = [
 const icons: Record<string, ReactElement> = {
   "/in-game-notification": <Sparkles size={18} />,
   "/broadcast/live-gold-ranking": <Coins size={18} />,
+  "/broadcast/team-gold-ranking": <Coins size={18} />,
+  "/broadcast/team-level-ranking": <Rows3 size={18} />,
   "/broadcast/live-levels": <Rows3 size={18} />,
   "/notification": <Bell size={18} />,
   "/routes": <ListTree size={18} />,

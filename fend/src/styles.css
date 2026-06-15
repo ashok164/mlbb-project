@@ -394,6 +394,22 @@ code {
   cursor: grab;
 }
 
+.control-columns {
+  display: grid;
+  grid-template-columns: 36px 42px 48px minmax(0, 1fr) minmax(170px, 230px) minmax(160px, 220px);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid #222b33;
+  border-bottom: 1px solid #222b33;
+  background: #101418;
+  color: #96a4b0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .control-row:active {
   cursor: grabbing;
 }
@@ -416,6 +432,19 @@ select {
   background: #101418;
   color: #eef2f6;
   padding: 0 10px;
+}
+
+.control-text-input {
+  min-height: 38px;
+  border: 1px solid #34424d;
+  border-radius: 8px;
+  background: #101418;
+  color: #eef2f6;
+  padding: 0 10px;
+}
+
+.control-text-input::placeholder {
+  color: #6f8090;
 }
 
 @media (max-width: 860px) {
@@ -485,6 +514,11 @@ select {
     grid-template-columns: 36px 38px 44px minmax(0, 1fr);
   }
 
+  .control-columns {
+    display: none;
+  }
+
+  .control-text-input,
   .control-row select {
     grid-column: 1 / -1;
   }

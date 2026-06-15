@@ -6,6 +6,8 @@ import LiveGoldRankingPage from "../../live-gold-ranking/view";
 import LivePlayerLevelsPage from "../../live-player-levels/view";
 import NotificationPage from "../../notification/view";
 import RoutesPage from "../../routes/view";
+import TeamGoldRankingPage from "../../team-gold-ranking/view";
+import TeamLevelRankingPage from "../../team-level-ranking/view";
 
 export type BrowserRoute = {
   path: string;
@@ -18,6 +20,8 @@ export const browserRoutes: BrowserRoute[] = [
   { path: "/in-game-notification", label: "In-Game Notification", element: <InGameNotificationPage /> },
   { path: "/broadcast/live-gold-ranking", label: "Broadcast Live Gold Ranking", element: <LiveGoldRankingPage /> },
   { path: "/boradcast/live-gold-ranking", label: "Broadcast Live Gold Ranking", element: <LiveGoldRankingPage /> },
+  { path: "/broadcast/team-gold-ranking", label: "Broadcast Team Gold Ranking", element: <TeamGoldRankingPage /> },
+  { path: "/broadcast/team-level-ranking", label: "Broadcast Team Level Ranking", element: <TeamLevelRankingPage /> },
   { path: "/broadcast/live-levels", label: "Broadcast Live Levels", element: <LivePlayerLevelsPage /> },
   { path: "/boradcast/live-levels", label: "Broadcast Live Levels", element: <LivePlayerLevelsPage /> },
   { path: "/live-player-levels", label: "Live Player Levels", element: <LivePlayerLevelsPage /> },
@@ -39,6 +43,8 @@ export function AppRouter() {
     activeRoute.path === "/in-game-notification" ||
     activeRoute.path === "/broadcast/live-gold-ranking" ||
     activeRoute.path === "/boradcast/live-gold-ranking" ||
+    activeRoute.path === "/broadcast/team-gold-ranking" ||
+    activeRoute.path === "/broadcast/team-level-ranking" ||
     activeRoute.path === "/broadcast/live-levels" ||
     activeRoute.path === "/boradcast/live-levels" ||
     activeRoute.path === "/live-player-levels"

@@ -334,6 +334,7 @@ function cleanPlayer(p) {
     xpm:                p.xpm                 ?? 0,
     skillid:            p.skillid             ?? "",
     skill_left_time:    p.skill_left_time     ?? 0,
+    major_left_time:    p.major_left_time     ?? 0,
     control_time_ms:    p.control_time_ms     ?? 0,
     physical_defense:   p.physical_defense    ?? 0,
     magic_defense:      p.magic_defense       ?? 0,
@@ -356,6 +357,7 @@ function emptyPlayer() {
     total_damage: 0, total_hurt: 0, total_heal: 0,
     total_damage_tower: 0, total_heal_other: 0,
     xpm: 0, skillid: "", skill_left_time: 0, control_time_ms: 0,
+    major_left_time: 0,
     physical_defense: 0, magic_defense: 0,
     map_pos_x: 0, map_pos_y: 0,
     equips: Array.from({ length: 6 }, () => ({

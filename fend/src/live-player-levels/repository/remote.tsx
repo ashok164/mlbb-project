@@ -16,6 +16,8 @@ export type LiveLevelPlayer = {
   isEliminated: boolean;
   isLastSurvivor: boolean;
   reviveLeftTime: number;
+  skillLeftTime: number;
+  majorLeftTime: number;
   healthPct: number;
 };
 
@@ -69,6 +71,20 @@ function normalizeReviveSeconds(player: Player) {
   return value > 180 ? Math.ceil(value / 1000) : Math.ceil(value);
 }
 
+function normalizeSkillCooldown(player: Player) {
+  const rawPlayer = player as Player & Record<string, unknown>;
+  const value = Math.max(0, Number(rawPlayer.skill_left_time ?? 0) || 0);
+
+  return value > 180 ? value / 1000 : value;
+}
+
+function normalizeMajorCooldown(player: Player) {
+  const rawPlayer = player as Player & Record<string, unknown>;
+  const value = Math.max(0, Number(rawPlayer.major_left_time ?? 0) || 0);
+
+  return value > 180 ? value / 1000 : value;
+}
+
 function normalizePercent(value: unknown) {
   const percent = Number(value);
   if (!Number.isFinite(percent)) return 0;
@@ -80,6 +96,8 @@ function toLiveLevelPlayer(player: Player, teamSide: TeamSide, slot: number): Li
   const skillId = imageId(player.skillid);
   const talent3Id = imageId(player.rune_talent_3);
   const reviveLeftTime = normalizeReviveSeconds(player);
+  const skillLeftTime = normalizeSkillCooldown(player);
+  const majorLeftTime = normalizeMajorCooldown(player);
   const isDead = normalizeBoolean(player.dead);
   const healthPct = normalizePercent(player.hp_pct);
 
@@ -97,6 +115,8 @@ function toLiveLevelPlayer(player: Player, teamSide: TeamSide, slot: number): Li
     isEliminated: isDead && healthPct <= 0,
     isLastSurvivor: false,
     reviveLeftTime,
+    skillLeftTime,
+    majorLeftTime,
     healthPct
   };
 }

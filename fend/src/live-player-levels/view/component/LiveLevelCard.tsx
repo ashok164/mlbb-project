@@ -1,4 +1,5 @@
 import type { LiveLevelPlayer } from "../../repository/remote";
+import { useEffect, useRef, useState } from "react";
 import styles from "../view.module.css";
 
 type Props = {
@@ -10,17 +11,38 @@ function formatTimer(seconds: number) {
 }
 
 export function LiveLevelCard({ player }: Props) {
+  const [showUltimateReadyOverlay, setShowUltimateReadyOverlay] = useState(false);
+  const previousMajorLeftTime = useRef(player.majorLeftTime);
   const isRight = player.teamSide === "right";
   const isLowHealth = player.healthPct <= 25;
+  const isSpellCoolingDown = !player.isDead && player.skillLeftTime > 0;
+  const isUltimateCoolingDown = player.majorLeftTime > 0;
+  const isUltimateReady = !player.isDead && player.majorLeftTime <= 0;
   const className = [
     styles.card,
     isRight ? styles.rightCard : styles.leftCard,
     player.isDead ? styles.deadCard : "",
     player.isEliminated ? styles.eliminatedCard : "",
-    player.isLastSurvivor ? styles.lastSurvivorCard : ""
+    player.isLastSurvivor ? styles.lastSurvivorCard : "",
+    isUltimateReady ? styles.ultimateReadyCard : ""
   ]
     .filter(Boolean)
     .join(" ");
+
+  useEffect(() => {
+    const wasCoolingDown = previousMajorLeftTime.current > 0;
+    const isNowReady = !player.isDead && player.majorLeftTime <= 0;
+    previousMajorLeftTime.current = player.majorLeftTime;
+
+    if (!wasCoolingDown || !isNowReady) return;
+
+    setShowUltimateReadyOverlay(true);
+    const timer = window.setTimeout(() => {
+      setShowUltimateReadyOverlay(false);
+    }, 1500);
+
+    return () => window.clearTimeout(timer);
+  }, [player.isDead, player.majorLeftTime]);
 
   return (
     <article className={className}>
@@ -36,12 +58,16 @@ export function LiveLevelCard({ player }: Props) {
             }}
           />
         )}
+        <div className={`${styles.ultimateBadge} ${isUltimateCoolingDown ? styles.ultimateCooldownBadge : styles.ultimateReadyBadge}`}>
+          {isUltimateCoolingDown ? <span>{formatTimer(player.majorLeftTime)}</span> : <span className={styles.ultimateReadyDot} />}
+        </div>
         <span className={styles.levelBadge}>{player.level}</span>
         {player.isDead && <span className={styles.reviveTimer}>{formatTimer(player.reviveLeftTime)}</span>}
       </div>
 
-      <div className={styles.spellFrame}>
+      <div className={`${styles.spellFrame} ${isSpellCoolingDown ? styles.spellCooldownActive : ""}`}>
         {player.spellImage && <img alt={`${player.name} spell`} src={player.spellImage} />}
+        {isSpellCoolingDown && <span className={styles.spellTimer}>{formatTimer(player.skillLeftTime)}</span>}
       </div>
 
       <div className={styles.infoBlock}>
@@ -59,6 +85,7 @@ export function LiveLevelCard({ player }: Props) {
         {player.emblemImage && <img alt={`${player.name} emblem talent`} src={player.emblemImage} />}
       </div>
 
+      {showUltimateReadyOverlay && <div className={styles.ultimateReadyOverlay}>ULTIMATE READY</div>}
       {player.isEliminated && <div className={styles.eliminatedOverlay}>ELIMINATED</div>}
     </article>
   );

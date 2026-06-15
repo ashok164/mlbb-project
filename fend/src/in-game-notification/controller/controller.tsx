@@ -53,6 +53,7 @@ export type FirstItemNotification = {
 export type InGameNotification = LevelNotification | FirstItemNotification | EquipmentNotification;
 
 const DISPLAY_MS = 3600;
+const NOTIFICATION_LEVELS = new Set([4, 15]);
 
 function laneKey(notification: Pick<InGameNotification, "teamSide" | "slot">) {
   return `${notification.teamSide}-${notification.slot}`;
@@ -70,6 +71,10 @@ function buildNotification(player: LevelPlayer, oldLevel: number): LevelNotifica
     newLevel: player.level,
     slot: player.slot
   };
+}
+
+function shouldShowLevelNotification(level: number) {
+  return NOTIFICATION_LEVELS.has(level);
 }
 
 function buildEquipmentNotification(player: LevelPlayer, itemId: string): EquipmentNotification {
@@ -169,11 +174,16 @@ export function useInGameNotificationController() {
         }
       }
 
-      if (!initialized.current && !previewed.current && player.level > 0) {
+      if (!initialized.current && !previewed.current && player.level > 0 && shouldShowLevelNotification(player.level)) {
         levelNotifications.push(buildNotification(player, Math.max(0, player.level - 1)));
       }
 
-      if (initialized.current && previousLevel !== undefined && player.level > previousLevel) {
+      if (
+        initialized.current &&
+        previousLevel !== undefined &&
+        player.level > previousLevel &&
+        shouldShowLevelNotification(player.level)
+      ) {
         levelNotifications.push(buildNotification(player, previousLevel));
       }
 
