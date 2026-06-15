@@ -44,20 +44,20 @@ function toTeamLevelRankingPlayer(player: Player, index: number, teamSide: "left
   };
 }
 
-function sortPlayers(players: Player[], teamSide: "left" | "right") {
-  return [...players]
-    .sort((a, b) => normalizeLevel(b) - normalizeLevel(a))
-    .slice(0, 5)
-    .map((player, index) => toTeamLevelRankingPlayer(player, index, teamSide));
-}
-
 export function mapSnapshotToTeamLevelRanking(snapshot?: MatchSnapshot | null) {
-  const leftPlayers = sortPlayers(snapshot?.left_team.players || [], "left");
-  const rightPlayers = sortPlayers(snapshot?.right_team.players || [], "right");
-  const players = [...leftPlayers, ...rightPlayers].map((player, index) => ({
-    ...player,
-    rank: index + 1
-  }));
+  const leftPlayers = (snapshot?.left_team.players || []).map((player, index) =>
+    toTeamLevelRankingPlayer(player, index, "left"),
+  );
+  const rightPlayers = (snapshot?.right_team.players || []).map((player, index) =>
+    toTeamLevelRankingPlayer(player, index, "right"),
+  );
+  const players = [...leftPlayers, ...rightPlayers]
+    .sort((a, b) => b.level - a.level)
+    .slice(0, 10)
+    .map((player, index) => ({
+      ...player,
+      rank: index + 1
+    }));
 
   return { players };
 }

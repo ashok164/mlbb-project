@@ -99,6 +99,11 @@
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
+.rightTeamRow .rank,
+.rightTeamRow .topLine strong {
+  color: #b86b00;
+}
+
 .heroThumb {
   grid-column: 2;
   width: 54px;
@@ -109,6 +114,10 @@
   grid-row: 1 / span 2;
   align-self: end;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.rightTeamRow .heroThumb {
+  border-left-color: #b86b00;
 }
 
 .heroThumb img {
@@ -189,26 +198,19 @@
   background: linear-gradient(90deg, #ffbc38 0%, #ff9d00 100%);
 }
 
-.upperHalfRow .barTrack {
-  border-color: #ef990d;
+.rightTeamRow .topLine span,
+.rightTeamRow .heroKey {
+  color: #8a4b22;
 }
 
-.upperHalfRow .barFill {
-  background: linear-gradient(90deg, #ffac18 0%, #ff9800 100%);
+.rightTeamRow .barTrack {
+  border-color: #b86b00;
 }
 
-.lowerHalfRow .rank,
-.lowerHalfRow .topLine strong {
-  color: #a86500;
+.rightTeamRow .barFill {
+  background: linear-gradient(90deg, #d08a1e 0%, #b86b00 100%);
 }
 
-.lowerHalfRow .barTrack {
-  border-color: #b96d00;
-}
-
-.lowerHalfRow .barFill {
-  background: linear-gradient(90deg, #bf7f0f 0%, #ab6900 100%);
-}
 
 .waitingPanel {
   position: fixed;

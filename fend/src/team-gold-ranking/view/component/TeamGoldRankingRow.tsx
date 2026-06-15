@@ -6,14 +6,11 @@ type Props = {
 };
 
 export function TeamGoldRankingRow({ player }: Props) {
-  const isLowerHalf = player.rank > 5;
-
   return (
     <article
       className={[
         styles.row,
-        player.teamSide === "right" ? styles.rightTeamRow : styles.leftTeamRow,
-        isLowerHalf ? styles.lowerHalfRow : styles.upperHalfRow
+        player.teamSide === "right" ? styles.rightTeamRow : styles.leftTeamRow
       ].join(" ")}
     >
       <div className={styles.rank}>{player.rank}</div>

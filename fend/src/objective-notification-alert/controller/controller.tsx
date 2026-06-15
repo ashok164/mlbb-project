@@ -4,14 +4,14 @@ import type { LiveAlertEvent } from "../../types";
 
 const DISPLAY_MS = 4200;
 
-function isKillAlert(item: LiveAlertEvent) {
-  return !(
+function isObjectiveAlert(item: LiveAlertEvent) {
+  return (
     item.trigger === "turtle_spawn" ||
     item.trigger === "lord_spawn"
   );
 }
 
-export function useNotificationAlertController() {
+export function useObjectiveNotificationAlertController() {
   const { status, message, url } = useGlobalWebsocket<LiveAlertEvent[]>("live-events");
   const seenIds = useRef(new Set<string>());
   const queue = useRef<LiveAlertEvent[]>([]);
@@ -19,7 +19,7 @@ export function useNotificationAlertController() {
   const [activeAlert, setActiveAlert] = useState<LiveAlertEvent | null>(null);
 
   useEffect(() => {
-    const items = (message?.data || []).filter(isKillAlert);
+    const items = (message?.data || []).filter(isObjectiveAlert);
     const fresh = items.filter((item) => {
       if (seenIds.current.has(item.id)) return false;
       seenIds.current.add(item.id);

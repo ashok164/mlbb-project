@@ -54,7 +54,13 @@ export function getOverlayRoutes(): OverlayRouteLink[] {
       label: "Broadcast Notification Alert",
       path: "/broadcast/notification-alert",
       url: "/broadcast/notification-alert",
-      description: "Raw-event alert overlay for kills, objectives, spawns, and multikill WEBM playback."
+      description: "Raw-event alert overlay for kills, wipeout, and multikill WEBM playback."
+    },
+    {
+      label: "Broadcast Objective Notification Alert",
+      path: "/broadcast/objective-notification-alert",
+      url: "/broadcast/objective-notification-alert",
+      description: "Separate objective alert overlay for turtle/lord spawn WEBM playback."
     }
   ];
 }

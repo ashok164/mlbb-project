@@ -241,7 +241,8 @@
   z-index: 3;
   display: grid;
   place-items: center;
-  background: rgba(139, 0, 0, 0.96);
+  padding: 0 18px;
+  background: rgba(18, 18, 18, 0.2);
   color: #ffffff;
   font-family: Impact, "Arial Black", sans-serif;
   font-size: 27px;
@@ -251,6 +252,25 @@
   animation:
     overlayEnterLeft 0.32s ease-out forwards,
     overlaySwipeOutLeft 1.15s ease-in 1.45s forwards;
+}
+
+.eliminatedOverlay::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(196px, calc(100% - 16px));
+  height: 32px;
+  background: url("/Public/mlbbNotification/nameplate.png") center / 100% 100% no-repeat;
+  transform: translate(-50%, -50%);
+}
+
+.eliminatedOverlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(120, 0, 0, 0.84) 0%, rgba(160, 8, 8, 0.52) 100%);
+  z-index: -1;
 }
 
 .ultimateReadyOverlay {

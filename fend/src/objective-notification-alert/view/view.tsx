@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { AlertVisual } from "../repository/remote";
+import type { ObjectiveAlertVisual } from "../repository/remote";
 import { AlertCard } from "./component/AlertCard";
 import styles from "./view.module.css";
 
@@ -7,10 +7,10 @@ type Props = {
   status: string;
   url: string;
   error: string;
-  activeAlert: AlertVisual | null;
+  activeAlert: ObjectiveAlertVisual | null;
 };
 
-export function NotificationAlertView({ activeAlert }: Props) {
+export function ObjectiveNotificationAlertView({ activeAlert }: Props) {
   useEffect(() => {
     document.documentElement.classList.add("overlay-page");
     document.body.classList.add("overlay-page");

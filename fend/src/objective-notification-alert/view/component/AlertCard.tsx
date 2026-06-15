@@ -1,8 +1,8 @@
-import type { AlertVisual } from "../../repository/remote";
+import type { ObjectiveAlertVisual } from "../../repository/remote";
 import styles from "../view.module.css";
 
 type Props = {
-  alert: AlertVisual;
+  alert: ObjectiveAlertVisual;
 };
 
 export function AlertCard({ alert }: Props) {

@@ -49,20 +49,20 @@ function toTeamGoldRankingPlayer(player: Player, index: number, teamSide: "left"
   };
 }
 
-function sortPlayers(players: Player[], teamSide: "left" | "right") {
-  return [...players]
-    .sort((a, b) => normalizeGold(b) - normalizeGold(a))
-    .slice(0, 5)
-    .map((player, index) => toTeamGoldRankingPlayer(player, index, teamSide));
-}
-
 export function mapSnapshotToTeamGoldRanking(snapshot?: MatchSnapshot | null) {
-  const leftPlayers = sortPlayers(snapshot?.left_team.players || [], "left");
-  const rightPlayers = sortPlayers(snapshot?.right_team.players || [], "right");
-  const players = [...leftPlayers, ...rightPlayers].map((player, index) => ({
-    ...player,
-    rank: index + 1
-  }));
+  const leftPlayers = (snapshot?.left_team.players || []).map((player, index) =>
+    toTeamGoldRankingPlayer(player, index, "left"),
+  );
+  const rightPlayers = (snapshot?.right_team.players || []).map((player, index) =>
+    toTeamGoldRankingPlayer(player, index, "right"),
+  );
+  const players = [...leftPlayers, ...rightPlayers]
+    .sort((a, b) => b.gold - a.gold)
+    .slice(0, 10)
+    .map((player, index) => ({
+      ...player,
+      rank: index + 1
+    }));
 
   return { players };
 }

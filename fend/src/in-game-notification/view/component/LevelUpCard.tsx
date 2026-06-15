@@ -33,7 +33,9 @@ export function LevelUpCard({ notification }: Props) {
     const itemSlots = Array.from({ length: 6 }, (_, index) => notification.itemImages[index] || "");
     const slotColumn = notification.itemIndex % 3;
     const slotRow = Math.floor(notification.itemIndex / 3);
-    const travelX = 154 - slotColumn * 39;
+    const leftTravelXByColumn = [154, 115, 76];
+    const rightTravelXByColumn = [146, 108, 70];
+    const travelX = (isRight ? rightTravelXByColumn : leftTravelXByColumn)[slotColumn] ?? 154;
     const travelY = slotRow === 0 ? -15 : 15;
     const flyingItemStyle = {
       "--item-travel-x": `${isRight ? travelX : -travelX}px`,

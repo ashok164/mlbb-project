@@ -89,7 +89,7 @@
   position: relative;
   width: 258px;
   height: 42px;
-  margin-top: 0;
+  margin-top: 2px;
   background: url("/Public/mlbbNotification/nameplate.png") center / 100% 100% no-repeat;
   opacity: 0;
   animation:
@@ -131,8 +131,8 @@
 }
 
 .slainCard.centeredCard .playerInfo {
-  left: 51.5%;
-  bottom: 36px;
+  left: 53%;
+  bottom: 50px;
 }
 
 .centeredCard .playerImage {
@@ -144,11 +144,7 @@
 .centeredCard .playerPlate {
   width: 214px;
   height: 37px;
-  margin-top: 0;
-}
-
-.slainCard.centeredCard .playerPlate {
-  margin-top: 0;
+  margin-top: 4px;
 }
 
 .cornerCard .playerInfo {
