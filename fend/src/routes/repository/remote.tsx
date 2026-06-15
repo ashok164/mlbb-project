@@ -49,6 +49,12 @@ export function getOverlayRoutes(): OverlayRouteLink[] {
       path: "/broadcast/team-level-ranking",
       url: "/broadcast/team-level-ranking",
       description: "Combined team level ranking overlay with player portraits and level progress bars."
+    },
+    {
+      label: "Broadcast Notification Alert",
+      path: "/broadcast/notification-alert",
+      url: "/broadcast/notification-alert",
+      description: "Raw-event alert overlay for kills, objectives, spawns, and multikill WEBM playback."
     }
   ];
 }

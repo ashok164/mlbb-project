@@ -26,6 +26,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
+app.use("/notification-assets", express.static("C:/Users/SARTHAK/Desktop/mlbbnotifcation"));
 
 let cachedData = null;
 let ingameData = null;
@@ -39,6 +40,9 @@ let refreshInterval = null;
 let timerInterval = null;
 let storedRuneIds = {};
 let isRefreshing = false;
+let liveEventQueue = [];
+const processedEventKeys = new Set();
+let liveEventBattleId = "";
 
 let localGameTime = 0;
 let lastApiGameTime = 0;
@@ -61,6 +65,7 @@ const WS_ENDPOINTS = new Set([
   "postgame/players/right",
   "golddiff",
   "postgame/golddiff",
+  "live-events",
 ]);
 
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
@@ -246,6 +251,92 @@ function getAssignedHeroName(roleid) {
   return "";
 }
 
+function buildLiveEventKey(event) {
+  return [
+    event.event_type || "",
+    event.game_time || 0,
+    event.killer_id || 0,
+    event.killed_id || 0,
+    event.boss_name || "",
+    event.tower_name || "",
+    (event.extra_param || []).join(","),
+  ].join("-");
+}
+
+function normalizeKillTrigger(extraParams = []) {
+  if (extraParams.includes("first_blood")) return "first_blood";
+  if (extraParams.includes("double_kill")) return "double_kill";
+  if (extraParams.includes("triple_kill")) return "triple_kill";
+  if (extraParams.includes("maniac")) return "maniac";
+  if (extraParams.includes("savage") || extraParams.includes("penta_kill")) return "savage";
+  if (extraParams.includes("legendary")) return "legendary";
+  return "single_kill";
+}
+
+function getNotificationAsset(trigger) {
+  const assetMap = {
+    first_blood: "firstblood.webm",
+    double_kill: "doublekill.webm",
+    triple_kill: "triplekill.webm",
+    maniac: "maniac.webm",
+    savage: "savage.webm",
+    turtle_slain: "turtleslain.webm",
+    lord_slain: "lordslain.webm",
+    turtle_spawn: "turtlespawn.webm",
+    lord_spawn: "lordspawn.webm",
+    wipeout: "wipeout.webm",
+  };
+  const file = assetMap[trigger] || "";
+  return file ? `http://localhost:${PORT}/notification-assets/${file}` : "";
+}
+
+function notificationPlayerImage(roleid) {
+  const cleanRoleId = String(roleid || "").trim();
+  return cleanRoleId ? `/Public/Players/${cleanRoleId}.png` : "/Public/Players/default.png";
+}
+
+function notificationSpellImage(skillid) {
+  const cleanSkillId = String(skillid || "").trim();
+  return cleanSkillId ? `/Public/Spells/${cleanSkillId}.png` : "";
+}
+
+function buildSpawnEventKey(trigger, gameTime) {
+  return `spawn-${trigger}-${gameTime}`;
+}
+
+function hasNonSpawnLiveEvents(queue) {
+  return queue.some(
+    (event) => event.type === "kill_notification" || event.type === "objective_notification",
+  );
+}
+
+function rawHasCombatEvents(raw) {
+  const sourceEvents = raw?.data?.incre_event_list || [];
+  return sourceEvents.some((event) =>
+    event.event_type === "kill_hero" ||
+    event.event_type === "kill_boss" ||
+    event.event_type === "camp_ace",
+  );
+}
+
+function resetLiveEventsState(battleId) {
+  liveEventBattleId = String(battleId || "");
+  liveEventQueue = [];
+  processedEventKeys.clear();
+}
+
+function ensureLiveEventsState(raw) {
+  const battleId = String(raw?.data?.battleid || "");
+  if (battleId && battleId !== liveEventBattleId) {
+    resetLiveEventsState(battleId);
+    return;
+  }
+
+  if (!hasNonSpawnLiveEvents(liveEventQueue) && rawHasCombatEvents(raw)) {
+    resetLiveEventsState(battleId);
+  }
+}
+
 function hasAssignedSequence(players) {
   return players.some((p) => getAssignedSequence(p.roleid, 0) > 0);
 }
@@ -385,7 +476,7 @@ function talentImg(talent_id) {
 
 function spellImg(skillid) {
   if (!skillid) return "";
-  return `C:/Users/User/Desktop/vmixData/images/spells/${skillid}.png`;
+  return `/Spells/${skillid}.png`;
 }
 
 function playerpicImg(roleid) {
@@ -502,6 +593,9 @@ function startRefresh() {
         // Keep the last real ingame snapshot so live-only fields like death timers survive after state=end.
         // If server started fresh in postgame, build ingameData from postgame with /heroes/ paths.
         if (!ingameData) ingameData = buildIngameFallback(postgameData);
+        if (hasIngamePlayers) {
+          collectNewLiveEvents(ingameRaw, ingameData);
+        }
 
         writeTxt("timer.txt", "00:00");
         writeTxt("left_gold.txt", "0");
@@ -524,6 +618,7 @@ function startRefresh() {
         currentState = "ingame";
         lastIngameRaw = ingameRaw;
         ingameData = cleanIngame(ingameRaw);
+        collectNewLiveEvents(ingameRaw, ingameData);
         cachedData = ingameData;
         updateTextFiles(ingameRaw);
         broadcastWsPayloads();
@@ -620,6 +715,8 @@ function getWsPayload(endpoint) {
       return postgameData?.gold_diff
         ? { ok: true, data: postgameData.gold_diff }
         : { ok: false, error: "No postgame gold diff yet" };
+    case "live-events":
+      return { ok: true, data: liveEventQueue };
     default:
       return { ok: false, error: "Unknown websocket endpoint" };
   }
@@ -642,6 +739,133 @@ function sendWsPayload(ws) {
 
 function broadcastWsPayloads() {
   wss.clients.forEach(sendWsPayload);
+}
+
+function pushLiveEvents(events) {
+  if (!events.length) return;
+  liveEventQueue.push(...events);
+  if (liveEventQueue.length > 80) {
+    liveEventQueue = liveEventQueue.slice(-80);
+  }
+}
+
+function buildKillNotificationEvent(event, cleanedData) {
+  const players = cleanedData?.all_players || [];
+  const killer = players.find((player) => String(player.roleid) === String(event.killer_id));
+  const trigger = normalizeKillTrigger(event.extra_param || []);
+  const assetUrl = getNotificationAsset(trigger);
+
+  if (!assetUrl) return null;
+
+  return {
+    id: buildLiveEventKey(event),
+    type: "kill_notification",
+    trigger,
+    game_time: Number(event.game_time) || 0,
+    killer_id: String(event.killer_id || ""),
+    killer_name: event.killer_name || killer?.name || "",
+    killer_team_side: Number(event.killer_camp) === 1 ? "left" : "right",
+    killer_hero_id: String(killer?.heroid || event.heroid || "").trim(),
+    killer_player_image: notificationPlayerImage(event.killer_id),
+    killer_spell_image: notificationSpellImage(killer?.skillid || ""),
+    killed_id: String(event.killed_id || ""),
+    killed_name: event.killed_name || "",
+    asset_url: assetUrl,
+  };
+}
+
+function buildObjectiveNotificationEvent(event, trigger, cleanedData) {
+  const players = cleanedData?.all_players || [];
+  const killer = players.find((player) => String(player.roleid) === String(event.killer_id));
+  return {
+    id: buildLiveEventKey(event),
+    type: "objective_notification",
+    trigger,
+    game_time: Number(event.game_time) || 0,
+    killer_id: String(event.killer_id || ""),
+    killer_name: event.killer_name || killer?.name || "",
+    killer_team_side: Number(event.killer_camp) === 1 ? "left" : "right",
+    killer_hero_id: String(killer?.heroid || event.heroid || "").trim(),
+    killer_player_image: notificationPlayerImage(event.killer_id),
+    killer_spell_image: notificationSpellImage(killer?.skillid || ""),
+    killed_id: "",
+    killed_name: "",
+    asset_url: getNotificationAsset(trigger),
+  };
+}
+
+function buildSpawnNotificationEvent(trigger, gameTime) {
+  return {
+    id: buildSpawnEventKey(trigger, gameTime),
+    type: "spawn_notification",
+    trigger,
+    game_time: gameTime,
+    killer_id: "",
+    killer_name: "",
+    killer_team_side: "left",
+    killer_hero_id: "",
+    killer_player_image: "/Public/Players/default.png",
+    killer_spell_image: "",
+    killed_id: "",
+    killed_name: "",
+    asset_url: getNotificationAsset(trigger),
+  };
+}
+
+function collectSpawnNotifications(raw) {
+  const gameTime = Number(raw?.data?.game_time) || 0;
+  const events = [];
+  const spawnMilestones = [
+    { trigger: "turtle_spawn", gameTime: 120 },
+    { trigger: "turtle_spawn", gameTime: 300 },
+    { trigger: "turtle_spawn", gameTime: 480 },
+    { trigger: "lord_spawn", gameTime: 540 },
+  ];
+
+  spawnMilestones.forEach((milestone) => {
+    if (gameTime < milestone.gameTime) return;
+    const key = buildSpawnEventKey(milestone.trigger, milestone.gameTime);
+    if (processedEventKeys.has(key)) return;
+    processedEventKeys.add(key);
+    events.push(buildSpawnNotificationEvent(milestone.trigger, milestone.gameTime));
+  });
+
+  return events;
+}
+
+function collectNewLiveEvents(raw, cleanedData) {
+  ensureLiveEventsState(raw);
+  const sourceEvents = raw?.data?.incre_event_list || [];
+  const nextEvents = [];
+
+  sourceEvents.forEach((event) => {
+    const key = buildLiveEventKey(event);
+    if (processedEventKeys.has(key)) return;
+    processedEventKeys.add(key);
+
+    if (event.event_type === "kill_hero") {
+      const killNotification = buildKillNotificationEvent(event, cleanedData);
+      if (killNotification) nextEvents.push(killNotification);
+      return;
+    }
+
+    if (event.event_type === "kill_boss" && event.boss_name === "tortoise") {
+      nextEvents.push(buildObjectiveNotificationEvent(event, "turtle_slain", cleanedData));
+      return;
+    }
+
+    if (event.event_type === "kill_boss" && event.boss_name === "lord") {
+      nextEvents.push(buildObjectiveNotificationEvent(event, "lord_slain", cleanedData));
+      return;
+    }
+
+    if (event.event_type === "camp_ace") {
+      nextEvents.push(buildObjectiveNotificationEvent(event, "wipeout", cleanedData));
+    }
+  });
+
+  nextEvents.push(...collectSpawnNotifications(raw));
+  pushLiveEvents(nextEvents);
 }
 
 wss.on("connection", (ws, req) => {
@@ -819,7 +1043,7 @@ app.get("/talent-image/:talentid", (req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("Not found");
 });
 app.get("/spell-image/:skillid", (req, res) => {
-  const p = `C:/Users/User/Desktop/vmixData/images/spells/${req.params.skillid}.png`;
+  const p = path.join(__dirname, "fend", "Public", "Spells", `${req.params.skillid}.png`);
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("Not found");
 });
 app.get("/playerpic/:roleid", (req, res) => {

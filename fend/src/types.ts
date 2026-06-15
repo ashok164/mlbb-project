@@ -92,3 +92,31 @@ export type MatchSnapshot = {
   all_players: Player[];
   gold_diff?: Record<string, unknown>;
 };
+
+export type LiveAlertEvent = {
+  id: string;
+  type: "kill_notification" | "objective_notification" | "spawn_notification";
+  trigger:
+    | "single_kill"
+    | "first_blood"
+    | "double_kill"
+    | "triple_kill"
+    | "maniac"
+    | "savage"
+    | "turtle_slain"
+    | "lord_slain"
+    | "turtle_spawn"
+    | "lord_spawn"
+    | "wipeout"
+    | "legendary";
+  game_time: number;
+  killer_id: string;
+  killer_name: string;
+  killer_team_side: "left" | "right";
+  killer_hero_id: string;
+  killer_player_image: string;
+  killer_spell_image: string;
+  killed_id: string;
+  killed_name: string;
+  asset_url: string;
+};
