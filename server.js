@@ -26,7 +26,10 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json());
-app.use("/notification-assets", express.static(path.join(__dirname, "fend", "Public", "mlbbNotification")));
+app.use(
+  "/notification-assets",
+  express.static(path.join(__dirname, "fend", "Public", "mlbbNotification")),
+);
 
 let cachedData = null;
 let ingameData = null;
@@ -71,7 +74,9 @@ const WS_ENDPOINTS = new Set([
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
 const POSTGAME_ROLE_ORDER = ROLE_ORDER;
 const TXT_DIR = __dirname;
-const API_AUTH_TOKEN = "1c7c9de5798a010e8f7da8ab5b82d953";
+// const API_AUTH_TOKEN = "1c7c9de5798a010e8f7da8ab5b82d953";
+const API_AUTH_TOKEN = "4f259c58b7b33d5dfbd56b1ec6547932";
+
 const API_HTTPS_AGENT = new https.Agent({
   keepAlive: true,
   maxSockets: 4,
@@ -171,7 +176,9 @@ function writeTxt(filename, value) {
 
 function shouldRetryFetch(err) {
   const code = err?.code || err?.errno || "";
-  return ["ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"].includes(code);
+  return ["ECONNRESET", "ETIMEDOUT", "ECONNREFUSED", "EAI_AGAIN"].includes(
+    code,
+  );
 }
 
 async function fetchJsonWithRetry(url, attempts = 2) {
@@ -211,7 +218,12 @@ function updateTurtle(value, stateKey, timeKey, filename, key) {
   writeTxtSafe(filename, turtleState[stateKey], key);
 }
 
-function calcGoldDiffs(leftPlayers, rightPlayers, goldField = "gold", roleOrder = ROLE_ORDER) {
+function calcGoldDiffs(
+  leftPlayers,
+  rightPlayers,
+  goldField = "gold",
+  roleOrder = ROLE_ORDER,
+) {
   const diffs = {};
   roleOrder.forEach((role, i) => {
     const leftGold = Number(leftPlayers[i]?.[goldField]) || 0;
@@ -231,14 +243,18 @@ function calcGoldDiffs(leftPlayers, rightPlayers, goldField = "gold", roleOrder 
 
 function getAssignedRole(roleid) {
   const assignment = roleAssignments[String(roleid)];
-  if (assignment && typeof assignment === "object") return assignment.role ?? "";
+  if (assignment && typeof assignment === "object")
+    return assignment.role ?? "";
   return assignment ?? "";
 }
 
 function getAssignedSequence(roleid, fallback = 0) {
   const assignment = roleAssignments[String(roleid)];
   if (assignment && typeof assignment === "object") {
-    return Number(assignment.sequence_number ?? assignment.sequence ?? fallback) || fallback;
+    return (
+      Number(assignment.sequence_number ?? assignment.sequence ?? fallback) ||
+      fallback
+    );
   }
   return fallback;
 }
@@ -268,7 +284,8 @@ function normalizeKillTrigger(extraParams = []) {
   if (extraParams.includes("double_kill")) return "double_kill";
   if (extraParams.includes("triple_kill")) return "triple_kill";
   if (extraParams.includes("maniac")) return "maniac";
-  if (extraParams.includes("savage") || extraParams.includes("penta_kill")) return "savage";
+  if (extraParams.includes("savage") || extraParams.includes("penta_kill"))
+    return "savage";
   if (extraParams.includes("legendary")) return "legendary";
   return "single_kill";
 }
@@ -292,7 +309,9 @@ function getNotificationAsset(trigger) {
 
 function notificationPlayerImage(roleid) {
   const cleanRoleId = String(roleid || "").trim();
-  return cleanRoleId ? `/Public/Players/${cleanRoleId}.png` : "/Public/Players/default.png";
+  return cleanRoleId
+    ? `/Public/Players/${cleanRoleId}.png`
+    : "/Public/Players/default.png";
 }
 
 function notificationSpellImage(skillid) {
@@ -306,16 +325,19 @@ function buildSpawnEventKey(trigger, gameTime) {
 
 function hasNonSpawnLiveEvents(queue) {
   return queue.some(
-    (event) => event.type === "kill_notification" || event.type === "objective_notification",
+    (event) =>
+      event.type === "kill_notification" ||
+      event.type === "objective_notification",
   );
 }
 
 function rawHasCombatEvents(raw) {
   const sourceEvents = raw?.data?.incre_event_list || [];
-  return sourceEvents.some((event) =>
-    event.event_type === "kill_hero" ||
-    event.event_type === "kill_boss" ||
-    event.event_type === "camp_ace",
+  return sourceEvents.some(
+    (event) =>
+      event.event_type === "kill_hero" ||
+      event.event_type === "kill_boss" ||
+      event.event_type === "camp_ace",
   );
 }
 
@@ -355,13 +377,19 @@ function normalizeRoleAssignments(input) {
       value && typeof value === "object" ? value.role || previousRole : value;
     const sequence =
       value && typeof value === "object"
-        ? Number(value.sequence_number ?? value.sequence ?? previousSequence) || 0
+        ? Number(value.sequence_number ?? value.sequence ?? previousSequence) ||
+          0
         : Number(previousSequence) || 0;
     const heroName =
       value && typeof value === "object"
         ? String(value.hero_name ?? previousHeroName ?? "").trim()
         : String(previousHeroName ?? "").trim();
-    if (role) next[String(roleid)] = { role, sequence_number: sequence, hero_name: heroName };
+    if (role)
+      next[String(roleid)] = {
+        role,
+        sequence_number: sequence,
+        hero_name: heroName,
+      };
   });
   return next;
 }
@@ -378,8 +406,7 @@ function sortByRole(players) {
   }
   return ROLE_ORDER.map(
     (role) =>
-      players.find((p) => getAssignedRole(p.roleid) === role) ||
-      emptyPlayer(),
+      players.find((p) => getAssignedRole(p.roleid) === role) || emptyPlayer(),
   );
 }
 
@@ -580,7 +607,8 @@ function startRefresh() {
         gameRunning = false;
         currentState = "postgame";
         const hasIngamePlayers = (ingameRaw?.data?.camp_list || []).some(
-          (camp) => Array.isArray(camp.player_list) && camp.player_list.length > 0,
+          (camp) =>
+            Array.isArray(camp.player_list) && camp.player_list.length > 0,
         );
         if (hasIngamePlayers) {
           lastIngameRaw = ingameRaw;
@@ -624,7 +652,11 @@ function startRefresh() {
         broadcastWsPayloads();
       }
     } catch (err) {
-      console.error("Refresh error:", err.code || err.name || "UNKNOWN", err.message);
+      console.error(
+        "Refresh error:",
+        err.code || err.name || "UNKNOWN",
+        err.message,
+      );
     } finally {
       isRefreshing = false;
     }
@@ -751,7 +783,9 @@ function pushLiveEvents(events) {
 
 function buildKillNotificationEvent(event, cleanedData) {
   const players = cleanedData?.all_players || [];
-  const killer = players.find((player) => String(player.roleid) === String(event.killer_id));
+  const killer = players.find(
+    (player) => String(player.roleid) === String(event.killer_id),
+  );
   const trigger = normalizeKillTrigger(event.extra_param || []);
   const assetUrl = getNotificationAsset(trigger);
 
@@ -776,7 +810,9 @@ function buildKillNotificationEvent(event, cleanedData) {
 
 function buildObjectiveNotificationEvent(event, trigger, cleanedData) {
   const players = cleanedData?.all_players || [];
-  const killer = players.find((player) => String(player.roleid) === String(event.killer_id));
+  const killer = players.find(
+    (player) => String(player.roleid) === String(event.killer_id),
+  );
   return {
     id: buildLiveEventKey(event),
     type: "objective_notification",
@@ -827,7 +863,9 @@ function collectSpawnNotifications(raw) {
     const key = buildSpawnEventKey(milestone.trigger, milestone.gameTime);
     if (processedEventKeys.has(key)) return;
     processedEventKeys.add(key);
-    events.push(buildSpawnNotificationEvent(milestone.trigger, milestone.gameTime));
+    events.push(
+      buildSpawnNotificationEvent(milestone.trigger, milestone.gameTime),
+    );
   });
 
   return events;
@@ -850,17 +888,23 @@ function collectNewLiveEvents(raw, cleanedData) {
     }
 
     if (event.event_type === "kill_boss" && event.boss_name === "tortoise") {
-      nextEvents.push(buildObjectiveNotificationEvent(event, "turtle_slain", cleanedData));
+      nextEvents.push(
+        buildObjectiveNotificationEvent(event, "turtle_slain", cleanedData),
+      );
       return;
     }
 
     if (event.event_type === "kill_boss" && event.boss_name === "lord") {
-      nextEvents.push(buildObjectiveNotificationEvent(event, "lord_slain", cleanedData));
+      nextEvents.push(
+        buildObjectiveNotificationEvent(event, "lord_slain", cleanedData),
+      );
       return;
     }
 
     if (event.event_type === "camp_ace") {
-      nextEvents.push(buildObjectiveNotificationEvent(event, "wipeout", cleanedData));
+      nextEvents.push(
+        buildObjectiveNotificationEvent(event, "wipeout", cleanedData),
+      );
     }
   });
 
@@ -936,8 +980,7 @@ app.get("/players", (req, res) => {
     const leftPlayers = orderPlayersByRoleForApi(d.left_team.players);
     const rightPlayers = orderPlayersByRoleForApi(d.right_team.players);
     res.json([...leftPlayers, ...rightPlayers]);
-  }
-  else res.status(503).json({ error: "Data not ready yet" });
+  } else res.status(503).json({ error: "Data not ready yet" });
 });
 app.get("/players/left", (req, res) => {
   const d =
@@ -1043,7 +1086,13 @@ app.get("/talent-image/:talentid", (req, res) => {
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("Not found");
 });
 app.get("/spell-image/:skillid", (req, res) => {
-  const p = path.join(__dirname, "fend", "Public", "Spells", `${req.params.skillid}.png`);
+  const p = path.join(
+    __dirname,
+    "fend",
+    "Public",
+    "Spells",
+    `${req.params.skillid}.png`,
+  );
   fs.existsSync(p) ? res.sendFile(p) : res.status(404).send("Not found");
 });
 app.get("/playerpic/:roleid", (req, res) => {
