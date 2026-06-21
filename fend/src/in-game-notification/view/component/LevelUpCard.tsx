@@ -4,9 +4,10 @@ import styles from "../view.module.css";
 
 type Props = {
   notification: InGameNotification;
+  theme: "theme1" | "theme2";
 };
 
-export function LevelUpCard({ notification }: Props) {
+export function LevelUpCard({ notification, theme }: Props) {
   const isRight = notification.teamSide === "right";
   const roleIcon = (
     <div className={styles.roleArea}>
@@ -16,7 +17,13 @@ export function LevelUpCard({ notification }: Props) {
 
   if (notification.type === "firstItem") {
     return (
-      <article className={`${styles.firstItemCard} ${isRight ? styles.rightFirstItemCard : styles.leftFirstItemCard}`}>
+      <article
+        className={[
+          styles.firstItemCard,
+          theme === "theme2" ? styles.theme2FirstItemCard : "",
+          isRight ? styles.rightFirstItemCard : styles.leftFirstItemCard
+        ].filter(Boolean).join(" ")}
+      >
         <header className={styles.firstItemHeader}>{roleIcon}</header>
         <div className={styles.firstItemStripe}>{notification.playerName}</div>
         <div className={styles.firstItemContent}>
@@ -59,7 +66,13 @@ export function LevelUpCard({ notification }: Props) {
     } as CSSProperties;
 
     return (
-      <article className={`${styles.equipmentCard} ${isRight ? styles.rightEquipmentCard : styles.leftEquipmentCard}`}>
+      <article
+        className={[
+          styles.equipmentCard,
+          theme === "theme2" ? styles.theme2EquipmentCard : "",
+          isRight ? styles.rightEquipmentCard : styles.leftEquipmentCard
+        ].filter(Boolean).join(" ")}
+      >
         <div className={styles.equipmentHero}>
           <img
             alt={`${notification.playerName} hero`}
@@ -109,7 +122,13 @@ export function LevelUpCard({ notification }: Props) {
   const nameArea = <div className={styles.nameArea}>{isRight ? <>{levelText}{playerText}</> : <>{playerText}{levelText}</>}</div>;
 
   return (
-    <article className={`${styles.card} ${isRight ? styles.rightCard : styles.leftCard}`}>
+    <article
+      className={[
+        styles.card,
+        theme === "theme2" ? styles.theme2LevelCard : "",
+        isRight ? styles.rightCard : styles.leftCard
+      ].filter(Boolean).join(" ")}
+    >
       {isRight ? nameArea : roleIcon}
       {isRight ? roleIcon : nameArea}
     </article>

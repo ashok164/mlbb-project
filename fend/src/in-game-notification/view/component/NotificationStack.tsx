@@ -5,11 +5,12 @@ import styles from "../view.module.css";
 type Props = {
   side: "left" | "right";
   notifications: InGameNotification[];
+  theme: "theme1" | "theme2";
 };
 
 const lanes = [0, 1, 2, 3, 4];
 
-export function NotificationStack({ side, notifications }: Props) {
+export function NotificationStack({ side, notifications, theme }: Props) {
   return (
     <div className={`${styles.stack} ${side === "left" ? styles.leftStack : styles.rightStack}`}>
       {lanes.map((slot) => {
@@ -17,7 +18,7 @@ export function NotificationStack({ side, notifications }: Props) {
 
         return (
           <div className={styles.lane} key={`${side}-${slot}`}>
-            {notification && <LevelUpCard notification={notification} />}
+            {notification && <LevelUpCard notification={notification} theme={theme} />}
           </div>
         );
       })}

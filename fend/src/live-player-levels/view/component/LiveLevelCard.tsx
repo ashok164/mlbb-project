@@ -4,13 +4,14 @@ import styles from "../view.module.css";
 
 type Props = {
   player: LiveLevelPlayer;
+  theme: "theme1" | "theme2";
 };
 
 function formatTimer(seconds: number) {
   return Math.ceil(seconds).toString();
 }
 
-export function LiveLevelCard({ player }: Props) {
+export function LiveLevelCard({ player, theme }: Props) {
   const [showUltimateReadyOverlay, setShowUltimateReadyOverlay] = useState(false);
   const previousMajorLeftTime = useRef(player.majorLeftTime);
   const isRight = player.teamSide === "right";
@@ -20,6 +21,7 @@ export function LiveLevelCard({ player }: Props) {
   const isUltimateReady = !player.isDead && player.majorLeftTime <= 0;
   const className = [
     styles.card,
+    theme === "theme2" ? styles.theme2Card : "",
     isRight ? styles.rightCard : styles.leftCard,
     player.isDead ? styles.deadCard : "",
     player.isEliminated ? styles.eliminatedCard : "",

@@ -19,6 +19,13 @@
   box-shadow: inset 0 0 0 2px rgba(255, 153, 0, 0.35);
 }
 
+.theme2Panel {
+  border: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(241, 238, 232, 0.985) 100%);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+}
+
 .header {
   display: grid;
   height: 74px;
@@ -33,6 +40,14 @@
   text-shadow: none;
 }
 
+.theme2Panel .header {
+  justify-items: start;
+  padding: 0 24px;
+  border-bottom: 0;
+  background: linear-gradient(90deg, #4b3200 0%, #6e4700 100%);
+  color: #ffffff;
+}
+
 .rows {
   display: grid;
 }
@@ -44,6 +59,20 @@
   align-items: center;
   border-bottom: 4px solid #050505;
   background: #ffffff;
+}
+
+.theme2Panel .row {
+  grid-template-columns: 42px 54px minmax(0, 1fr) 118px;
+  gap: 6px;
+  height: 54px;
+  border-bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(241, 238, 232, 0.985) 100%);
+}
+
+.theme2Panel .row:nth-child(even) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(241, 238, 232, 0.985) 100%);
 }
 
 .row:nth-child(odd) {
@@ -66,6 +95,13 @@
   text-shadow: 0 2px 0 #000000;
 }
 
+.theme2Panel .rank {
+  background: transparent;
+  color: #b96f00;
+  font-size: 22px;
+  text-shadow: none;
+}
+
 .portrait {
   display: grid;
   width: 58px;
@@ -74,6 +110,15 @@
   overflow: hidden;
   border: 3px solid #050505;
   background: #ffffff;
+}
+
+.theme2Panel .portrait,
+.theme2Panel .hero {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #c57800;
 }
 
 .portrait img,
@@ -88,6 +133,11 @@
   min-width: 0;
   gap: 7px;
   padding: 0 10px;
+}
+
+.theme2Panel .names {
+  gap: 2px;
+  padding: 0 2px 0 0;
 }
 
 .names strong,
@@ -106,6 +156,11 @@
   text-shadow: none;
 }
 
+.theme2Panel .names strong {
+  color: #b96f00;
+  font-size: 16px;
+}
+
 .items {
   display: flex;
   min-width: 0;
@@ -122,6 +177,20 @@
   border: 1px solid #050505;
   border-radius: 50%;
   background: #ffffff;
+}
+
+.theme2Panel .items {
+  width: 100%;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 0;
+  background: #b96f00;
+  overflow: hidden;
+  gap: 0;
+}
+
+.theme2Panel .item {
+  display: none;
 }
 
 .item img {
@@ -149,6 +218,15 @@
   color: #ff9900;
   font-size: 28px;
   text-shadow: none;
+}
+
+.theme2Panel .gold {
+  place-items: center end;
+  border-left: 0;
+  background: transparent;
+  color: #6d6d6d;
+  font-size: 22px;
+  padding-right: 20px;
 }
 
 .waitingPanel {

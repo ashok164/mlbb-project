@@ -21,6 +21,12 @@
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
 }
 
+.theme2Panel {
+  border: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(241, 238, 232, 0.985) 100%);
+}
+
 .header {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -36,6 +42,12 @@
   position: relative;
 }
 
+.theme2Panel .header {
+  min-height: 62px;
+  padding: 0 22px;
+  background: linear-gradient(90deg, #4b3200 0%, #6e4700 100%);
+}
+
 .header::after {
   content: "";
   position: absolute;
@@ -44,6 +56,10 @@
     linear-gradient(135deg, rgba(255, 255, 255, 0.16) 10%, transparent 10%, transparent 50%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.16) 60%, transparent 60%, transparent);
   background-size: 32px 32px;
   pointer-events: none;
+}
+
+.theme2Panel .header::after {
+  display: none;
 }
 
 .headerIcon {
@@ -69,10 +85,19 @@
   z-index: 1;
 }
 
+.theme2Panel .headerText {
+  justify-content: start;
+}
+
 .rows {
   display: grid;
   gap: 10px;
   padding: 9px 10px 10px 8px;
+}
+
+.theme2Panel .rows {
+  gap: 2px;
+  padding: 6px 10px 10px 0;
 }
 
 .row {
@@ -86,6 +111,13 @@
   padding: 0 4px 0 0;
 }
 
+.theme2Panel .row {
+  min-height: 49px;
+  padding: 0 6px 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985) 0%, rgba(241, 238, 232, 0.985) 100%);
+}
+
 .rank {
   grid-column: 1;
   grid-row: 1 / span 2;
@@ -97,6 +129,11 @@
   line-height: 1;
   text-align: center;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.theme2Panel .rank {
+  color: #b96f00;
+  text-shadow: none;
 }
 
 .rightTeamRow .rank,
@@ -114,6 +151,17 @@
   grid-row: 1 / span 2;
   align-self: end;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.theme2Panel .heroThumb {
+  border-left: 4px solid #c57800;
+  background: #8b5d10;
+  box-shadow: none;
+}
+
+.theme2Panel .rightTeamRow .heroThumb {
+  border-left-color: #966811;
+  background: #6f4a0a;
 }
 
 .rightTeamRow .heroThumb {
@@ -162,11 +210,19 @@
   letter-spacing: 0.2px;
 }
 
+.theme2Panel .topLine strong {
+  color: #b96f00;
+}
+
 .topLine span {
   color: #6d6d6d;
   font-size: 19px;
   line-height: 1;
   letter-spacing: 0.2px;
+}
+
+.theme2Panel .topLine span {
+  color: #7a5531;
 }
 
 .heroKey {
@@ -176,12 +232,21 @@
   line-height: 1;
 }
 
+.theme2Panel .heroKey {
+  color: #6d6d6d;
+  margin-top: -1px;
+}
+
 .barCell {
   grid-column: 3;
   grid-row: 2;
   min-width: 0;
   align-self: end;
   margin-top: 0;
+}
+
+.theme2Panel .barCell {
+  margin-top: -4px;
 }
 
 .barTrack {
@@ -193,9 +258,18 @@
   box-sizing: border-box;
 }
 
+.theme2Panel .barTrack {
+  border-color: #d59019;
+  background: #ffffff;
+}
+
 .barFill {
   height: 100%;
   background: linear-gradient(90deg, #ffbc38 0%, #ff9d00 100%);
+}
+
+.theme2Panel .barFill {
+  background: linear-gradient(90deg, #d08a12 0%, #b96f00 100%);
 }
 
 .rightTeamRow .topLine span,
@@ -203,12 +277,30 @@
   color: #8a4b22;
 }
 
+.theme2Panel .rightTeamRow .rank,
+.theme2Panel .rightTeamRow .topLine strong {
+  color: #8f6412;
+}
+
+.theme2Panel .rightTeamRow .topLine span,
+.theme2Panel .rightTeamRow .heroKey {
+  color: #7a5531;
+}
+
 .rightTeamRow .barTrack {
   border-color: #b86b00;
 }
 
+.theme2Panel .rightTeamRow .barTrack {
+  border-color: #b47a18;
+}
+
 .rightTeamRow .barFill {
   background: linear-gradient(90deg, #d08a1e 0%, #b86b00 100%);
+}
+
+.theme2Panel .rightTeamRow .barFill {
+  background: linear-gradient(90deg, #b98223 0%, #8f6412 100%);
 }
 
 

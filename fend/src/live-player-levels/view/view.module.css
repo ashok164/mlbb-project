@@ -43,6 +43,13 @@
   transform: var(--card-flip);
 }
 
+.theme2Card {
+  border-top-color: #6e4700;
+  border-bottom-color: #6e4700;
+  background: #f0ede8;
+  box-shadow: inset 0 0 0 1px rgba(110, 71, 0, 0.18);
+}
+
 .rightCard {
   --card-flip: scaleX(-1);
 }
@@ -222,6 +229,27 @@
   background: #b86b00;
 }
 
+.theme2Card .heroFrame {
+  background: #4b3200;
+}
+
+.theme2Card.rightCard .heroFrame {
+  background: #6a4608;
+}
+
+.theme2Card .spellFrame,
+.theme2Card .emblemFrame,
+.theme2Card .levelBadge,
+.theme2Card.rightCard .levelBadge {
+  background: #b96f00;
+}
+
+.theme2Card.rightCard .spellFrame,
+.theme2Card.rightCard .emblemFrame,
+.theme2Card.rightCard .levelBadge {
+  background: #8f6412;
+}
+
 .reviveTimer {
   position: absolute;
   inset: 0;
@@ -312,6 +340,16 @@
   border-left: 4px solid #050505;
 }
 
+.theme2Card .infoBlock {
+  background: linear-gradient(90deg, #ffffff 0%, #f0ede8 100%);
+  border-left-color: #b96f00;
+}
+
+.theme2Card.rightCard .infoBlock {
+  background: linear-gradient(90deg, #fcfaf6 0%, #e7e0d3 100%);
+  border-left-color: #8f6412;
+}
+
 .infoBlock strong,
 .infoBlock span {
   min-width: 0;
@@ -322,6 +360,18 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.theme2Card .infoBlock strong,
+.theme2Card .infoBlock span {
+  position: relative;
+  z-index: 1;
+  color: #b96f00;
+}
+
+.theme2Card.rightCard .infoBlock strong,
+.theme2Card.rightCard .infoBlock span {
+  color: #8a6114;
 }
 
 .infoBlock strong {
@@ -342,13 +392,32 @@
   background: #2a2a2a;
 }
 
+.theme2Card .healthTrack {
+  border: 0;
+  border-radius: 999px;
+  background: #b96f00;
+}
+
+.theme2Card.rightCard .healthTrack {
+  background: #8f6412;
+}
+
 .healthFill {
   height: 100%;
   background: linear-gradient(90deg, #17b84f 0%, #7ee45f 100%);
 }
 
+.theme2Card .healthFill {
+  background: #ffffff;
+}
+
 .lowHealthFill {
   background: #d60000;
+}
+
+.theme2Card .lowHealthFill,
+.theme2Card.eliminatedCard .healthFill {
+  background: #ff8e66;
 }
 
 .eliminatedCard .healthFill {
