@@ -16,6 +16,10 @@ export function LevelUpCard({ notification, theme }: Props) {
   );
 
   if (notification.type === "firstItem") {
+    const firstItemHeaderContent = theme === "theme2"
+      ? <img alt={`Item ${notification.itemId}`} src={notification.itemImage} />
+      : roleIcon;
+
     return (
       <article
         className={[
@@ -24,7 +28,7 @@ export function LevelUpCard({ notification, theme }: Props) {
           isRight ? styles.rightFirstItemCard : styles.leftFirstItemCard
         ].filter(Boolean).join(" ")}
       >
-        <header className={styles.firstItemHeader}>{roleIcon}</header>
+        <header className={styles.firstItemHeader}>{firstItemHeaderContent}</header>
         <div className={styles.firstItemStripe}>{notification.playerName}</div>
         <div className={styles.firstItemContent}>
           <strong>FIRST ITEM PRIORITY</strong>

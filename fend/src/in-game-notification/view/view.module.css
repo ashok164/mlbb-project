@@ -149,6 +149,14 @@
   background: #6f4a0a;
 }
 
+.theme2FirstItemCard .firstItemHeader > img {
+  display: block;
+  width: 54px;
+  height: 54px;
+  background: transparent;
+  object-fit: contain;
+}
+
 .leftFirstItemCard .firstItemHeader {
   grid-column: 1;
 }
@@ -515,6 +523,11 @@
   height: 25px;
   background: transparent;
   object-fit: contain;
+}
+
+.theme2FirstItemCard .firstItemFrame img {
+  width: 58px;
+  height: 58px;
 }
 
 .newPriorityItem {
