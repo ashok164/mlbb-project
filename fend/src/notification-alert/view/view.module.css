@@ -127,20 +127,21 @@
 
 .centeredCard .playerInfo {
   left: 50%;
-  bottom: 48px;
+  bottom: 80px;
   right: auto;
   transform: translateX(-50%);
 }
 
 .slainCard.centeredCard .playerInfo {
-  left: 51.5%;
-  bottom: 36px;
+  left: 50.5%;
+  bottom: 80px;
 }
 
 .centeredCard .playerImage {
-  width: 152px;
-  height: 152px;
+  width: 200px;
+  height: 200px;
   border-radius: 0;
+  transform: translateY(-14px);
 }
 
 .centeredCard .playerPlate {

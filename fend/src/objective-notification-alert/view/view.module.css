@@ -131,8 +131,8 @@
 }
 
 .slainCard.centeredCard .playerInfo {
-  left: 53%;
-  bottom: 50px;
+  left: 49.5%;
+  bottom: 62px;
 }
 
 .centeredCard .playerImage {
@@ -141,10 +141,22 @@
   border-radius: 0;
 }
 
+.slainCard.centeredCard .playerImage {
+  width: 166px;
+  height: 166px;
+  transform: translate(-30px, -10px);
+}
+
 .centeredCard .playerPlate {
   width: 214px;
   height: 37px;
   margin-top: 4px;
+}
+
+.slainCard.centeredCard .playerPlate {
+  width: 226px;
+  margin-top: -6px;
+  transform: translate(-24px, -6px);
 }
 
 .cornerCard .playerInfo {

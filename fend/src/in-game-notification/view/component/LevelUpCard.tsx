@@ -4,10 +4,10 @@ import styles from "../view.module.css";
 
 type Props = {
   notification: InGameNotification;
-  theme: "theme1" | "theme2";
 };
 
-export function LevelUpCard({ notification, theme }: Props) {
+export function LevelUpCard({ notification }: Props) {
+  const theme = "theme2" as const;
   const isRight = notification.teamSide === "right";
   const roleIcon = (
     <div className={styles.roleArea}>

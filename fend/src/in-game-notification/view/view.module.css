@@ -331,6 +331,18 @@
   border: 1px solid rgba(15, 17, 32, 0.14);
   background: #ffd086;
   border-radius: 18px;
+  overflow: visible;
+}
+
+.theme2EquipmentCard .equipmentPlayer {
+  z-index: 2;
+  overflow: visible;
+}
+
+.theme2EquipmentCard .equipmentHero {
+  z-index: 4;
+  align-self: start;
+  overflow: visible;
 }
 
 .theme2EquipmentCard.leftEquipmentCard {
@@ -397,6 +409,27 @@
   object-fit: cover;
 }
 
+.theme2EquipmentCard .equipmentHero img {
+  width: 88px;
+  height: 88px;
+  border-radius: 12px;
+  box-shadow: 0 10px 18px rgba(17, 19, 33, 0.28);
+  object-position: center top;
+}
+
+.theme2EquipmentCard .equipmentPlayer img {
+  transform: translateY(-4px) scale(1.08);
+  transform-origin: center bottom;
+}
+
+.theme2EquipmentCard.leftEquipmentCard .equipmentHero img {
+  transform: translate(18px, -14px);
+}
+
+.theme2EquipmentCard.rightEquipmentCard .equipmentHero img {
+  transform: translate(-18px, -14px);
+}
+
 .equipmentHeader {
   display: grid;
   z-index: 2;
@@ -451,6 +484,9 @@
 .theme2EquipmentCard .equipmentStripe {
   background: #b87400;
   color: #fff2c8;
+  z-index: 2;
+  font-size: 15px;
+  transform: translateY(-4px);
 }
 
 .leftEquipmentCard .equipmentStripe {
