@@ -35,6 +35,7 @@ let cachedData = null;
 let ingameData = null;
 let postgameData = null;
 let roleAssignments = {};
+let uidCameraMappings = {};
 let currentState = "unknown";
 let BATTLE_ID = "";
 let INGAME_URL = "";
@@ -74,6 +75,7 @@ const WS_ENDPOINTS = new Set([
 const ROLE_ORDER = ["exp", "mid", "roam", "jungle", "gold"];
 const POSTGAME_ROLE_ORDER = ROLE_ORDER;
 const TXT_DIR = __dirname;
+const CAMERA_MAPPING_FILE = path.join(__dirname, "cameraMappings.json");
 // const API_AUTH_TOKEN = "1c7c9de5798a010e8f7da8ab5b82d953";
 // const API_AUTH_TOKEN = "4f259c58b7b33d5dfbd56b1ec6547932";
 const API_AUTH_TOKEN = "4f259c58b7b33d5dfbd56b1ec6547932";
@@ -106,6 +108,38 @@ const turtleState = {
   last_right_turtle_time: Date.now(),
 };
 const TURTLE_TIMEOUT = 8000;
+
+function loadUidCameraMappings() {
+  try {
+    if (!fs.existsSync(CAMERA_MAPPING_FILE)) return {};
+    const parsed = JSON.parse(fs.readFileSync(CAMERA_MAPPING_FILE, "utf8"));
+    if (!parsed || typeof parsed !== "object") return {};
+
+    return Object.entries(parsed).reduce((current, [uid, value]) => {
+      const cleanUid = String(uid || "").trim();
+      const cleanCameraLink = String(value ?? "").trim();
+      if (cleanUid) current[cleanUid] = cleanCameraLink;
+      return current;
+    }, {});
+  } catch (error) {
+    console.log("Failed to load camera mappings:", error.message);
+    return {};
+  }
+}
+
+function saveUidCameraMappings() {
+  try {
+    fs.writeFileSync(
+      CAMERA_MAPPING_FILE,
+      JSON.stringify(uidCameraMappings, null, 2),
+      "utf8",
+    );
+  } catch (error) {
+    console.log("Failed to save camera mappings:", error.message);
+  }
+}
+
+uidCameraMappings = loadUidCameraMappings();
 
 // ================================================================
 // READLINE
@@ -269,6 +303,29 @@ function getAssignedHeroName(roleid) {
   return "";
 }
 
+function getAssignedUid(roleid) {
+  const assignment = roleAssignments[String(roleid)];
+  if (assignment && typeof assignment === "object") {
+    const explicitUid = String(assignment.uid ?? "").trim();
+    if (explicitUid) return explicitUid;
+  }
+  return String(roleid ?? "").trim();
+}
+
+function getAssignedCameraLink(roleid) {
+  const assignment = roleAssignments[String(roleid)];
+  if (assignment && typeof assignment === "object") {
+    const explicitCamera = String(
+      assignment.camera_link ?? assignment.camera ?? "",
+    ).trim();
+    if (explicitCamera) return explicitCamera;
+    const uid = String(assignment.uid ?? roleid ?? "").trim();
+    if (uid) return String(uidCameraMappings[uid] ?? "").trim();
+  }
+  const fallbackUid = String(roleid ?? "").trim();
+  return fallbackUid ? String(uidCameraMappings[fallbackUid] ?? "").trim() : "";
+}
+
 function buildLiveEventKey(event) {
   return [
     event.event_type || "",
@@ -375,6 +432,12 @@ function normalizeRoleAssignments(input) {
       previous && typeof previous === "object" ? previous.sequence_number : 0;
     const previousHeroName =
       previous && typeof previous === "object" ? previous.hero_name : "";
+    const previousUid =
+      previous && typeof previous === "object" ? previous.uid : String(roleid);
+    const previousCameraLink =
+      previous && typeof previous === "object"
+        ? previous.camera_link ?? previous.camera
+        : "";
     const role =
       value && typeof value === "object" ? value.role || previousRole : value;
     const sequence =
@@ -386,11 +449,27 @@ function normalizeRoleAssignments(input) {
       value && typeof value === "object"
         ? String(value.hero_name ?? previousHeroName ?? "").trim()
         : String(previousHeroName ?? "").trim();
+    const uid =
+      value && typeof value === "object"
+        ? String(value.uid ?? previousUid ?? roleid).trim()
+        : String(previousUid ?? roleid).trim();
+    const cameraLink =
+      value && typeof value === "object"
+        ? String(
+            value.camera_link ??
+              value.camera ??
+              previousCameraLink ??
+              uidCameraMappings[String(value.uid ?? previousUid ?? roleid).trim()] ??
+              "",
+          ).trim()
+        : String(previousCameraLink ?? "").trim();
     if (role)
       next[String(roleid)] = {
         role,
         sequence_number: sequence,
         hero_name: heroName,
+        uid,
+        camera_link: cameraLink,
       };
   });
   return next;
@@ -1051,6 +1130,82 @@ app.post("/assign", (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/camera", (req, res) => {
+  const entries = Object.entries(req.body || {});
+  if (entries.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, error: "No valid camera assignments provided" });
+  }
+
+  entries.forEach(([key, value]) => {
+    const incoming =
+      value && typeof value === "object"
+        ? value
+        : { uid: key, camera_link: value };
+    const uid = String(incoming.uid ?? key).trim();
+    const nextCameraLink = String(
+      incoming.camera_link ?? incoming.camera ?? "",
+    ).trim();
+
+    if (uid) {
+      if (nextCameraLink) uidCameraMappings[uid] = nextCameraLink;
+      else delete uidCameraMappings[uid];
+    }
+
+    const roleid = String(key).trim();
+    const previous = roleAssignments[roleid];
+    const previousRole =
+      previous && typeof previous === "object" ? previous.role : previous;
+    const previousSequence =
+      previous && typeof previous === "object" ? previous.sequence_number : 0;
+    const previousHeroName =
+      previous && typeof previous === "object" ? previous.hero_name : "";
+    const previousUid =
+      previous && typeof previous === "object" ? previous.uid : roleid;
+    const previousCameraLink =
+      previous && typeof previous === "object"
+        ? previous.camera_link ?? previous.camera
+        : "";
+
+    if (!roleid) return;
+
+    roleAssignments[roleid] = {
+      role: String(incoming.role ?? previousRole ?? "").trim(),
+      sequence_number:
+        Number(
+          incoming.sequence_number ?? incoming.sequence ?? previousSequence,
+        ) || 0,
+      hero_name: String(incoming.hero_name ?? previousHeroName ?? "").trim(),
+      uid: String(incoming.uid ?? previousUid ?? roleid).trim(),
+      camera_link: String(
+        incoming.camera_link ??
+          incoming.camera ??
+          previousCameraLink ??
+          uidCameraMappings[String(incoming.uid ?? previousUid ?? roleid).trim()] ??
+          "",
+      ).trim(),
+    };
+  });
+
+  saveUidCameraMappings();
+
+  if (lastIngameRaw) {
+    ingameData = cleanIngame(lastIngameRaw);
+    if (currentState === "ingame") cachedData = ingameData;
+  }
+  if (lastPostgameRaw) {
+    postgameData = cleanPostgame(lastPostgameRaw);
+    if (currentState === "postgame") {
+      cachedData = postgameData;
+      ingameData = buildIngameFallback(postgameData);
+    }
+  }
+
+  broadcastWsPayloads();
+  res.json({ success: true });
+});
+
 app.get("/hero-image/:heroid", (req, res) => {
   const jpg = `C:/Users/User/Desktop/vmixData/images/heroes/${req.params.heroid}.jpg`;
   const png = `C:/Users/User/Desktop/vmixData/images/heroes/${req.params.heroid}.png`;
@@ -1122,6 +1277,8 @@ app.get("/assign", (req, res) => {
       <td class="seq"></td>
       <td><img src="http://localhost:${PORT}/hero-image/${p.heroid}" width="55" height="55" style="border-radius:8px;object-fit:cover;border:2px solid #e94560;" onerror="this.style.display='none'"/></td>
       <td style="font-weight:bold;">${p.name}</td>
+      <td>${String(getAssignedUid(p.roleid)).replace(/"/g, "&quot;")}</td>
+      <td><input type="text" class="camera-link" value="${String(getAssignedCameraLink(p.roleid)).replace(/"/g, "&quot;")}" placeholder="Camera link" /></td>
       <td><input type="text" class="hero-name" value="${String(getAssignedHeroName(p.roleid)).replace(/"/g, "&quot;")}" placeholder="Assigned hero name" /></td>
       <td><select name="${p.roleid}" id="${p.roleid}">
         <option value="">-- Select Role --</option>
@@ -1140,9 +1297,9 @@ app.get("/assign", (req, res) => {
     td{padding:10px 12px;border-bottom:1px solid #2a2a4a;vertical-align:middle;}
     tr:hover td{background:#1f1f3a;}
     tr.dragging{opacity:.45;} .drag{width:34px;color:#4ecca3;font-size:22px;cursor:grab;text-align:center;} .seq{width:60px;color:#4ecca3;font-weight:bold;}
-    select,.hero-name{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;width:160px;}
+    select,.hero-name,.camera-link{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;width:160px;}
     select{cursor:pointer;}
-    .hero-name::placeholder{color:#9bb0bf;}
+    .hero-name::placeholder,.camera-link::placeholder{color:#9bb0bf;}
     button{background:#e94560;color:white;padding:13px 35px;border:none;border-radius:5px;font-size:16px;cursor:pointer;margin-top:20px;}
     button:hover{background:#c73652;}#status{margin-top:15px;font-size:16px;color:#4ecca3;font-weight:bold;}
     .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:bold;margin-left:10px;background:${currentState === "ingame" ? "#4ecca3" : "#e94560"};color:#1a1a2e;}
@@ -1151,9 +1308,9 @@ app.get("/assign", (req, res) => {
     <div class="info">🔑 Battle ID: ${BATTLE_ID}</div>
     <p>Assign roles once — applies to both ingame and postgame automatically.</p>
     <h2>LEFT TEAM — ${cachedData.left_team.name}</h2>
-    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="left">${makeRows(cachedData.left_team.players, "left")}</tbody></table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>UID</th><th>Camera Link</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="left">${makeRows(cachedData.left_team.players, "left")}</tbody></table>
     <h2>RIGHT TEAM — ${cachedData.right_team.name}</h2>
-    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="right">${makeRows(cachedData.right_team.players, "right")}</tbody></table>
+    <table><tr><th></th><th>Seq</th><th>Hero</th><th>Player</th><th>UID</th><th>Camera Link</th><th>Hero Name</th><th>Role</th></tr><tbody data-side="right">${makeRows(cachedData.right_team.players, "right")}</tbody></table>
     <button onclick="saveRoles()">💾 Save Role Assignments</button>
     <div id="status"></div>
     <script>
@@ -1194,13 +1351,194 @@ app.get("/assign", (req, res) => {
         rows.forEach(row => {
           const select = row.querySelector("select");
           const heroName = row.querySelector(".hero-name")?.value || "";
+          const cameraLink = row.querySelector(".camera-link")?.value || "";
           if (!select.value) missing = true;
-          else assignments[row.dataset.roleid] = { role: select.value, sequence_number: Number(row.querySelector(".seq").innerText) || 0, hero_name: heroName };
+          else assignments[row.dataset.roleid] = { role: select.value, sequence_number: Number(row.querySelector(".seq").innerText) || 0, hero_name: heroName, uid: row.dataset.roleid, camera_link: cameraLink };
         });
         if (missing) { document.getElementById("status").style.color="#e94560"; document.getElementById("status").innerText="⚠️ Please assign all roles before saving!"; return; }
         fetch("/assign", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(assignments) })
         .then(r=>r.json()).then(()=>{ document.getElementById("status").style.color="#4ecca3"; document.getElementById("status").innerText="✅ Roles saved!"; })
         .catch(()=>{ document.getElementById("status").style.color="#e94560"; document.getElementById("status").innerText="❌ Error saving."; });
+      }
+    </script>
+  </body></html>`);
+});
+
+app.get("/camera", (req, res) => {
+  const cameraMediaMarkup = (player) => {
+    const cameraLink = String(getAssignedCameraLink(player.roleid)).trim();
+    const fallbackImage = `http://localhost:${PORT}/playerpic/${player.roleid}`;
+    const isVdoNinja = /(^https?:\/\/)?(www\.)?vdo\.ninja/i.test(cameraLink);
+
+    if (!cameraLink) {
+      return `<div class="camera-fallback"><img src="${fallbackImage}" alt="${player.name}" onerror="this.src='/Public/Players/default.png'" /></div>`;
+    }
+
+    if (isVdoNinja) {
+      return `<iframe class="camera-media" src="${cameraLink.replace(/"/g, "&quot;")}" allow="autoplay; fullscreen; camera; microphone; display-capture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="${String(player.name || "Player camera").replace(/"/g, "&quot;")}"></iframe>`;
+    }
+
+    return `<video class="camera-media" src="${cameraLink.replace(/"/g, "&quot;")}" autoplay muted playsinline preload="auto" onerror="this.replaceWith((() => { const wrap = document.createElement('div'); wrap.className='camera-fallback'; const img = document.createElement('img'); img.src='${fallbackImage}'; img.alt='${String(player.name || "Player").replace(/"/g, "&quot;")}'; img.onerror=() => { img.src='/Public/Players/default.png'; }; wrap.appendChild(img); return wrap; })())"></video>`;
+  };
+  const makePlayerRows = (players) =>
+    players
+      .filter((p) => p.heroid)
+      .map(
+        (p) => `
+    <tr data-roleid="${p.roleid}">
+      <td style="font-weight:bold;">${p.name}</td>
+      <td>${String(getAssignedUid(p.roleid)).replace(/"/g, "&quot;")}</td>
+      <td><input type="text" class="camera-link" value="${String(getAssignedCameraLink(p.roleid)).replace(/"/g, "&quot;")}" placeholder="Camera link" /></td>
+    </tr>`,
+      )
+      .join("");
+  const manualRows = Object.entries(uidCameraMappings)
+    .map(
+      ([uid, cameraLink]) => `
+    <tr class="manual-row">
+      <td><input type="text" class="uid-input" value="${String(uid).replace(/"/g, "&quot;")}" placeholder="Player UID" /></td>
+      <td><input type="text" class="camera-link" value="${String(cameraLink).replace(/"/g, "&quot;")}" placeholder="Camera link" /></td>
+    </tr>`,
+    )
+    .join("");
+  const makePreviewCards = (players, side) =>
+    players
+      .filter((p) => p.heroid)
+      .map(
+        (p) => `
+      <article class="preview-card ${side}">
+        <div class="preview-camera">${cameraMediaMarkup(p)}</div>
+        <div class="preview-info">
+          ${
+            side === "right"
+              ? `<div class="preview-kda-panel">
+            <div class="preview-kda-row"><span>K</span><strong>${Number(p.kill_num) || 0}</strong></div>
+            <div class="preview-kda-row"><span>D</span><strong>${Number(p.dead_num) || 0}</strong></div>
+            <div class="preview-kda-row"><span>A</span><strong>${Number(p.assist_num) || 0}</strong></div>
+          </div>`
+              : ""
+          }
+          <img class="preview-hero" src="http://localhost:${PORT}/hero-image/${p.heroid}" alt="${String(p.name).replace(/"/g, "&quot;")} hero" onerror="this.src='/Public/Players/default.png'" />
+          <div class="preview-meta">
+            <strong>${String(p.name || "").replace(/"/g, "&quot;")}</strong>
+            <div class="preview-role-row">
+              <img class="preview-role-icon" src="/Public/Roles/${String(p.role || "gold").toLowerCase()}.png" alt="${String(p.role || "role").replace(/"/g, "&quot;")}" onerror="this.style.display='none'" />
+              <span class="preview-role">${String(p.role || "unassigned").toUpperCase()}</span>
+            </div>
+          </div>
+          ${
+            side === "left"
+              ? `<div class="preview-kda-panel">
+            <div class="preview-kda-row"><span>K</span><strong>${Number(p.kill_num) || 0}</strong></div>
+            <div class="preview-kda-row"><span>D</span><strong>${Number(p.dead_num) || 0}</strong></div>
+            <div class="preview-kda-row"><span>A</span><strong>${Number(p.assist_num) || 0}</strong></div>
+          </div>`
+              : ""
+          }
+        </div>
+      </article>`,
+      )
+      .join("");
+  res.send(`<!DOCTYPE html><html><head><title>Camera Mapping</title><style>
+    *{box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#1a1a2e;color:white;padding:30px;}
+    h1{color:#e94560;margin-bottom:5px;}p{color:#aaa;margin-top:0;}
+    .info{background:#0f3460;padding:10px 15px;border-radius:5px;margin-bottom:20px;font-size:14px;color:#4ecca3;}
+    h2{color:white;background:#e94560;padding:8px 15px;border-radius:5px;display:inline-block;margin-top:30px;}
+    .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0 28px;}
+    .preview-stack{display:grid;gap:14px;align-content:start;}
+    .preview-card{display:grid;grid-template-rows:220px 112px;overflow:hidden;border:2px solid #e0ae4c;border-radius:16px;background:linear-gradient(180deg,#14253d,#0b1627);box-shadow:0 18px 32px rgba(0,0,0,.22);}
+    .preview-camera{height:160px;background:#03070d;}
+    .camera-media,.camera-fallback{width:100%;height:100%;border:0;display:block;object-fit:cover;background:#03070d;}
+    .camera-fallback img{width:100%;height:100%;object-fit:cover;display:block;}
+    .preview-info{display:grid;grid-template-columns:92px minmax(0,1fr) 130px;align-items:stretch;background:linear-gradient(180deg,#132846,#0c1830);}
+    .preview-card.right .preview-info{grid-template-columns:130px 92px minmax(0,1fr);}
+    .preview-hero{width:92px;height:100%;object-fit:cover;background:#122036;}
+    .preview-card.right .preview-hero{order:2;}
+    .preview-meta{display:grid;align-content:center;gap:10px;padding:12px 14px;}
+    .preview-card.right .preview-meta{order:3;}
+    .preview-meta strong{font-size:28px;line-height:1;color:#fff;text-transform:uppercase;}
+    .preview-role-row{display:flex;align-items:center;gap:8px;}
+    .preview-role-icon{width:24px;height:24px;object-fit:contain;background:transparent;}
+    .preview-role{font-size:14px;font-weight:bold;letter-spacing:.12em;color:#f1c96d;}
+    .preview-kda-panel{display:grid;grid-template-rows:repeat(3,1fr);background:linear-gradient(180deg,#17385c,#102745);}
+    .preview-card.right .preview-kda-panel{order:1;}
+    .preview-kda-row{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;padding:0 12px;border-bottom:1px solid rgba(224,174,76,.25);}
+    .preview-kda-row:last-child{border-bottom:0;}
+    .preview-kda-row span{font-size:22px;font-weight:bold;color:#f1c96d;text-align:center;}
+    .preview-kda-row strong{font-size:28px;line-height:1;color:#fff;text-align:center;}
+    .preview-side-label{font-size:18px;font-weight:bold;color:#9cc6ff;margin-bottom:2px;}
+    table{width:100%;border-collapse:collapse;margin-top:10px;margin-bottom:10px;}
+    th{background:#0f3460;padding:10px 12px;text-align:left;font-size:13px;text-transform:uppercase;}
+    td{padding:10px 12px;border-bottom:1px solid #2a2a4a;vertical-align:middle;}
+    tr:hover td{background:#1f1f3a;}
+    .camera-link,.uid-input{background:#0f3460;color:white;padding:7px 12px;border:1px solid #e94560;border-radius:4px;font-size:14px;width:100%;}
+    .camera-link::placeholder,.uid-input::placeholder{color:#9bb0bf;}
+    button{background:#e94560;color:white;padding:13px 35px;border:none;border-radius:5px;font-size:16px;cursor:pointer;margin-top:20px;}
+    button:hover{background:#c73652;}#status{margin-top:15px;font-size:16px;color:#4ecca3;font-weight:bold;}
+    @media (max-width: 1100px){.preview-grid{grid-template-columns:1fr;}.preview-camera{height:220px;}.preview-info,.preview-card.right .preview-info{grid-template-columns:92px minmax(0,1fr) 110px;}.preview-meta strong{font-size:22px;}.preview-kda-row span{font-size:18px;}.preview-kda-row strong{font-size:22px;}}
+  </style></head><body>
+    <h1>Camera Mapping</h1>
+    <div class="info">Battle ID: ${BATTLE_ID}</div>
+    <p>Save camera links by UID even before the match API is live. After players join and the API starts returning them, assign/control will auto-show the matching camera link.</p>
+    ${
+      cachedData
+        ? `<div class="preview-grid">
+      <section class="preview-stack">
+        <div class="preview-side-label">LEFT TEAM - ${cachedData.left_team.name}</div>
+        ${makePreviewCards(cachedData.left_team.players, "left")}
+      </section>
+      <section class="preview-stack">
+        <div class="preview-side-label">RIGHT TEAM - ${cachedData.right_team.name}</div>
+        ${makePreviewCards(cachedData.right_team.players, "right")}
+      </section>
+    </div>`
+        : ``
+    }
+    <h2>PRESET UID MAPPINGS</h2>
+    <table><tr><th>UID</th><th>Camera Link</th></tr><tbody id="manual-body">${manualRows || `<tr class="manual-row"><td><input type="text" class="uid-input" placeholder="Player UID" /></td><td><input type="text" class="camera-link" placeholder="Camera link" /></td></tr>`}</tbody></table>
+    <button type="button" onclick="addUidRow()">Add UID Row</button>
+    ${
+      cachedData
+        ? `<h2>LEFT TEAM - ${cachedData.left_team.name}</h2>
+    <table><tr><th>Player</th><th>UID</th><th>Camera Link</th></tr><tbody>${makePlayerRows(cachedData.left_team.players)}</tbody></table>
+    <h2>RIGHT TEAM - ${cachedData.right_team.name}</h2>
+    <table><tr><th>Player</th><th>UID</th><th>Camera Link</th></tr><tbody>${makePlayerRows(cachedData.right_team.players)}</tbody></table>`
+        : `<p>You can already save UID and camera links above. When players appear later, the assign page will fill the matched camera link automatically.</p>`
+    }
+    <button onclick="saveCamera()">Save Camera Links</button>
+    <div id="status"></div>
+    <script>
+      function addUidRow() {
+        const tbody = document.getElementById("manual-body");
+        const row = document.createElement("tr");
+        row.className = "manual-row";
+        row.innerHTML = '<td><input type="text" class="uid-input" placeholder="Player UID" /></td><td><input type="text" class="camera-link" placeholder="Camera link" /></td>';
+        tbody.appendChild(row);
+      }
+      function saveCamera() {
+        const rows = document.querySelectorAll("tr[data-roleid]");
+        const manualRows = document.querySelectorAll("tr.manual-row");
+        const payload = {};
+        manualRows.forEach(row => {
+          const uid = row.querySelector(".uid-input")?.value?.trim() || "";
+          const cameraLink = row.querySelector(".camera-link")?.value || "";
+          if (uid) {
+            payload[uid] = {
+              uid,
+              camera_link: cameraLink
+            };
+          }
+        });
+        rows.forEach(row => {
+          payload[row.dataset.roleid] = {
+            uid: row.dataset.roleid,
+            camera_link: row.querySelector(".camera-link")?.value || ""
+          };
+        });
+        fetch("/camera", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) })
+          .then(r => r.json())
+          .then(() => { document.getElementById("status").style.color="#4ecca3"; document.getElementById("status").innerText="Camera links saved!"; })
+          .catch(() => { document.getElementById("status").style.color="#e94560"; document.getElementById("status").innerText="Error saving camera links."; });
       }
     </script>
   </body></html>`);
@@ -1241,6 +1579,8 @@ function cleanIngamePlayer(p) {
     name: p.name ?? "",
     role: getAssignedRole(p.roleid) || "unassigned",
     assigned_hero_name: getAssignedHeroName(p.roleid),
+    uid: getAssignedUid(p.roleid),
+    camera_link: getAssignedCameraLink(p.roleid),
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -1301,6 +1641,8 @@ function emptyPlayer() {
     name: "",
     role: "unassigned",
     assigned_hero_name: "",
+    uid: "",
+    camera_link: "",
     roleid: "",
     playerpic_image: "",
     heroid: "",
@@ -1458,6 +1800,8 @@ function cleanPostgamePlayer(p) {
     name: p.name ?? "",
     role: getAssignedRole(p.roleid) || "unassigned",
     assigned_hero_name: getAssignedHeroName(p.roleid),
+    uid: getAssignedUid(p.roleid),
+    camera_link: getAssignedCameraLink(p.roleid),
     roleid: String(p.roleid ?? ""),
     playerpic_image: playerpicImg(p.roleid),
     heroid: p.heroid ?? "",
@@ -1508,6 +1852,8 @@ function emptyPostgamePlayer() {
     name: "",
     role: "unassigned",
     assigned_hero_name: "",
+    uid: "",
+    camera_link: "",
     roleid: "",
     playerpic_image: "",
     heroid: "",

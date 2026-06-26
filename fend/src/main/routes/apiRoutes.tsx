@@ -17,6 +17,7 @@ export const backendRoutes: BackendRoute[] = [
   { label: "Gold Diff", path: "/golddiff", method: "GET", group: "api", description: "Per-role current gold difference." },
   { label: "Postgame Gold Diff", path: "/postgame/golddiff", method: "GET", group: "api", description: "Per-role postgame gold difference." },
   { label: "Role Assign", path: "/assign", method: "POST", group: "control", description: "Save role assignments." },
+  { label: "Camera Map", path: "/camera", method: "POST", group: "control", description: "Save player UID camera links." },
   { label: "Timer Text", path: "/txt/timer.txt", method: "GET", group: "text", description: "vMix timer text source." },
   { label: "Hero Image", path: "/hero-image/:heroid", method: "GET", group: "asset", description: "Ingame hero image." },
   { label: "Draft Hero Image", path: "/drafthero-image/:heroid.png", method: "GET", group: "asset", description: "Draft hero image." }

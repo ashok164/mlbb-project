@@ -55,10 +55,9 @@
 
 .playerName {
   width: 100%;
-  padding: 0 42px;
+  padding: 0 14px 0 42px;
   display: flex;
   align-items: center;
-  justify-content: center;
   height: 100%;
   color: #ffffff;
   font-family: Impact, "Arial Black", sans-serif;
@@ -91,7 +90,7 @@
   position: relative;
   width: 258px;
   height: 42px;
-  margin-top: 0;
+  margin-top: 2px;
   background: url("/Public/mlbbNotification/nameplate.png") center / 100% 100% no-repeat;
   opacity: 0;
   animation:
@@ -103,10 +102,10 @@
 
 .spellIcon {
   position: absolute;
-  left: 8px;
-  top: 4px;
-  width: 28px;
-  height: 28px;
+  left: 4px;
+  top: 3px;
+  width: 34px;
+  height: 34px;
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -127,31 +126,38 @@
 
 .centeredCard .playerInfo {
   left: 50%;
-  bottom: 80px;
+  bottom: 48px;
   right: auto;
   transform: translateX(-50%);
 }
 
 .slainCard.centeredCard .playerInfo {
-  left: 50.5%;
-  bottom: 80px;
+  left: 49.5%;
+  bottom: 62px;
 }
 
 .centeredCard .playerImage {
-  width: 200px;
-  height: 200px;
+  width: 152px;
+  height: 152px;
   border-radius: 0;
-  transform: translateY(-14px);
+}
+
+.slainCard.centeredCard .playerImage {
+  width: 166px;
+  height: 166px;
+  transform: translate(-30px, -10px);
 }
 
 .centeredCard .playerPlate {
   width: 214px;
   height: 37px;
-  margin-top: 0;
+  margin-top: 4px;
 }
 
 .slainCard.centeredCard .playerPlate {
-  margin-top: 0;
+  width: 226px;
+  margin-top: -6px;
+  transform: translate(-24px, -6px);
 }
 
 .cornerCard .playerInfo {

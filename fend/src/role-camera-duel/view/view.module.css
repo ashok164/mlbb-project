@@ -1,0 +1,270 @@
+/* ==========================================================================
+   STAGE & GLOBAL OVERLAYS
+   ========================================================================== */
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+}
+
+.preloadLayer {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0.001;
+  pointer-events: none;
+  inset: -9999px auto auto -9999px;
+}
+
+.duelDock {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 24px 24px;
+}
+
+/* ==========================================================================
+   CARD STRUCTURE & LAYOUT (Thinner Sidebar Framework)
+   ========================================================================== */
+.card {
+  display: grid;
+  width: 520px;
+  height: 250px;
+  border: 4px solid #7a5a22; /* Signature dark-gold frame */
+  background: #000000;
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+/* LEFT CARD: [ Camera Stream / Nameplate (440px) ][ Thin Stat Sidebar (80px) ] */
+.leftCard {
+  grid-template-columns: 440px 80px;
+  grid-template-rows: 200px 50px; /* Increased nameplate row height to 50px */
+}
+
+.leftCard .mediaFrame {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.leftCard .namePlate {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.leftCard .infoPanel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  border-left: 4px solid #7a5a22;
+}
+
+/* RIGHT CARD: [ Thin Stat Sidebar (80px) ][ Camera Stream / Nameplate (440px) ] */
+.rightCard {
+  grid-template-columns: 80px 440px;
+  grid-template-rows: 200px 50px; /* Increased nameplate row height to 50px */
+}
+
+.rightCard .infoPanel {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  border-right: 4px solid #7a5a22;
+}
+
+.rightCard .mediaFrame {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.rightCard .namePlate {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* ==========================================================================
+   CAMERA BOX & LIVE VIDEO ELEMENTS
+   ========================================================================== */
+.mediaFrame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000000;
+}
+
+.videoFrame,
+.fallbackMedia,
+.fallbackMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==========================================================================
+   PLAYER NAMEPLATES (Slightly Bigger Bottom Footer Bars)
+   ========================================================================== */
+.namePlate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px; /* Force explicit 50px height matching the grid frame */
+  padding: 0 16px;
+  background: #0f1115;
+  border-top: 2px solid #7a5a22;
+  box-sizing: border-box;
+}
+
+.namePlate strong {
+  color: #ffffff;
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roleImage {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.teamSide {
+  display: none;
+}
+
+/* ==========================================================================
+   SIDE STAT PANEL (Single Consolidated Grid Framework)
+   ========================================================================== */
+.infoPanel {
+  display: grid;
+  grid-template-rows: 80px 1fr;
+  height: 100%;
+  background: #e9cb84; /* True Gold background fill */
+}
+
+.heroRail {
+  position: relative;
+  width: 100%;
+  height: 80px;
+  background: #000000;
+  overflow: hidden;
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kdaPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.kdaGrid {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: space-between; /* Spaced labels cleanly to left & right edges */
+  row-gap: 26px; /* Strategic vertical spacing layout window */
+  width: 100%;
+  padding: 16px 14px;
+  align-items: center;
+  position: relative; /* Anchor context container for absolute lines */
+}
+
+/* Typography styles matching image labels */
+.kdaGrid span, 
+.kdaGrid strong {
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 20px;
+  color: #3a4b59; /* Slate gray styling tint */
+  font-weight: 900;
+  line-height: 1;
+}
+
+.kdaGrid span {
+  text-align: left;
+}
+
+.kdaGrid strong {
+  text-align: right;
+}
+
+/* ===================================================================
+   FULL EDGE-TO-EDGE DIVIDER LINES (Matching image_bacd0a.png)
+   ===================================================================
+*/
+.kdaGrid span:nth-of-type(1)::after,
+.kdaGrid span:nth-of-type(2)::after {
+  content: "";
+  position: absolute;
+  /* Negative offsets counter the 14px grid padding to cleanly touch outer border lines */
+  left: -4px;  
+  right: -4px; 
+  height: 2px;
+  background-color: rgba(58, 75, 89, 0.3); /* Custom gray tone bar accent */
+}
+
+/* Line directly sitting underneath the K row */
+.kdaGrid span:nth-of-type(1)::after {
+  top: 40px; 
+}
+
+/* Line directly sitting underneath the D row */
+.kdaGrid span:nth-of-type(2)::after {
+  top: 86px;
+}
+
+/* ==========================================================================
+   RESPONSIVE COMPRESSION WORKFLOW
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .card {
+    width: 420px;
+    height: 210px;
+  }
+  .leftCard {
+    grid-template-columns: 350px 70px;
+    grid-template-rows: 168px 42px; /* Adjusted responsive ratio split */
+  }
+  .rightCard {
+    grid-template-columns: 70px 350px;
+    grid-template-rows: 168px 42px; /* Adjusted responsive ratio split */
+  }
+  .infoPanel {
+    grid-template-rows: 70px 1fr;
+  }
+  .heroRail {
+    height: 70px;
+  }
+  .namePlate strong {
+    font-size: 15px;
+  }
+  .kdaGrid {
+    row-gap: 14px;
+    padding: 8px 10px;
+  }
+  .kdaGrid span,
+  .kdaGrid strong {
+    font-size: 16px;
+  }
+  /* Adjusted responsive metrics for responsive line scales */
+  .kdaGrid span:nth-of-type(1)::after { top: 28px; left: -10px; right: -10px; }
+  .kdaGrid span:nth-of-type(2)::after { top: 62px; left: -10px; right: -10px; }
+}

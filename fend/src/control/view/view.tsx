@@ -9,12 +9,13 @@ type Props = {
   roleOptions: string[];
   setRole: (roleid: string, role: string) => void;
   setHeroName: (roleid: string, heroName: string) => void;
+  setCameraLink: (roleid: string, cameraLink: string) => void;
   movePlayer: (fromIndex: number, toIndex: number) => void;
   save: () => void;
   status: string;
 };
 
-export function ControlView({ snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, movePlayer, save, status }: Props) {
+export function ControlView({ snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, setCameraLink, movePlayer, save, status }: Props) {
   return (
     <section className="page">
       <header className="page-header">
@@ -40,6 +41,7 @@ export function ControlView({ snapshot, players, assignments, sequenceByRoleid, 
           <span>Seq</span>
           <span>Hero</span>
           <span>Player</span>
+          <span>Camera</span>
           <span>Hero Name</span>
           <span>Role</span>
         </div>
@@ -62,7 +64,16 @@ export function ControlView({ snapshot, players, assignments, sequenceByRoleid, 
             <img alt="" src={player.draft_hero_image || player.hero_image} />
             <div>
               <strong>{player.name}</strong>
-              <span>Role ID {player.roleid}</span>
+              <span>UID {player.uid || player.roleid}</span>
+            </div>
+            <div>
+              <input
+                className="control-text-input"
+                type="text"
+                placeholder="Camera link"
+                value={assignments[player.roleid]?.camera_link || player.camera_link || ""}
+                onChange={(event) => setCameraLink(player.roleid, event.target.value)}
+              />
             </div>
             <input
               className="control-text-input"

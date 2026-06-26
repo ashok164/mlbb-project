@@ -21,6 +21,8 @@ export type RoleAssignment = {
   role: string;
   sequence_number: number;
   hero_name?: string;
+  uid?: string;
+  camera_link?: string;
 };
 
 export type RoleAssignmentMap = Record<string, RoleAssignment>;
@@ -50,6 +52,8 @@ export type Player = {
   total_money_k?: string;
   level?: number;
   assigned_hero_name?: string;
+  uid?: string;
+  camera_link?: string;
   skillid?: string | number;
   spell_image?: string;
   rune_id?: string | number;

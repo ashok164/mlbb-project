@@ -38,7 +38,9 @@ export function useControlController() {
             initial[player.roleid] = {
               role: player.role,
               sequence_number: player.sequence_number || sequence_number,
-              hero_name: player.assigned_hero_name || ""
+              hero_name: player.assigned_hero_name || "",
+              uid: player.uid || player.roleid,
+              camera_link: player.camera_link || ""
             };
           }
         });
@@ -64,21 +66,38 @@ export function useControlController() {
   const setRole = (roleid: string, role: string) => {
     setAssignments((current) => ({
       ...current,
-      [roleid]: {
-        role,
-        sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
-        hero_name: current[roleid]?.hero_name || ""
-      }
-    }));
+        [roleid]: {
+          role,
+          sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
+          hero_name: current[roleid]?.hero_name || "",
+          uid: current[roleid]?.uid || roleid,
+          camera_link: current[roleid]?.camera_link || players.find((player) => player.roleid === roleid)?.camera_link || ""
+        }
+      }));
   };
 
   const setHeroName = (roleid: string, hero_name: string) => {
     setAssignments((current) => ({
       ...current,
+        [roleid]: {
+          role: current[roleid]?.role || players.find((player) => player.roleid === roleid)?.role || "",
+          sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
+          hero_name,
+          uid: current[roleid]?.uid || roleid,
+          camera_link: current[roleid]?.camera_link || players.find((player) => player.roleid === roleid)?.camera_link || ""
+        }
+      }));
+  };
+
+  const setCameraLink = (roleid: string, camera_link: string) => {
+    setAssignments((current) => ({
+      ...current,
       [roleid]: {
         role: current[roleid]?.role || players.find((player) => player.roleid === roleid)?.role || "",
         sequence_number: current[roleid]?.sequence_number || players.findIndex((player) => player.roleid === roleid) + 1,
-        hero_name
+        hero_name: current[roleid]?.hero_name || players.find((player) => player.roleid === roleid)?.assigned_hero_name || "",
+        uid: current[roleid]?.uid || roleid,
+        camera_link
       }
     }));
   };
@@ -97,7 +116,9 @@ export function useControlController() {
         next[player.roleid] = {
           role: next[player.roleid]?.role || player.role || "",
           sequence_number,
-          hero_name: next[player.roleid]?.hero_name || player.assigned_hero_name || ""
+          hero_name: next[player.roleid]?.hero_name || player.assigned_hero_name || "",
+          uid: next[player.roleid]?.uid || player.uid || player.roleid,
+          camera_link: next[player.roleid]?.camera_link || player.camera_link || ""
         };
       });
       return next;
@@ -119,7 +140,9 @@ export function useControlController() {
         payload[player.roleid] = {
           role: payload[player.roleid]?.role || player.role || "",
           sequence_number,
-          hero_name: payload[player.roleid]?.hero_name || player.assigned_hero_name || ""
+          hero_name: payload[player.roleid]?.hero_name || player.assigned_hero_name || "",
+          uid: payload[player.roleid]?.uid || player.uid || player.roleid,
+          camera_link: payload[player.roleid]?.camera_link || player.camera_link || ""
         };
       });
       await saveRoleAssignments(payload);
@@ -129,5 +152,5 @@ export function useControlController() {
     }
   };
 
-  return { snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, movePlayer, save, status };
+  return { snapshot, players, assignments, sequenceByRoleid, roleOptions, setRole, setHeroName, setCameraLink, movePlayer, save, status };
 }

@@ -61,6 +61,12 @@ export function getOverlayRoutes(): OverlayRouteLink[] {
       path: "/broadcast/objective-notification-alert",
       url: "/broadcast/objective-notification-alert",
       description: "Separate objective alert overlay for turtle/lord spawn WEBM playback."
+    },
+    {
+      label: "Broadcast Role Cameras",
+      path: "/broadcast/role-cameras",
+      url: "/broadcast/role-cameras",
+      description: "Bottom-corner left vs right player camera overlay that auto-switches the same role pair every 15 seconds, with hero, role badge, KDA, and player-picture fallback."
     }
   ];
 }
