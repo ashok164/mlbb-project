@@ -6,6 +6,7 @@ import styles from "../view.module.css";
 type Props = {
   player: RoleCameraPlayer | null;
   side: "left" | "right";
+  useDummyFallback?: boolean;
 };
 
 /* GLOBAL SYNC TIMER: both left and right rotate together */
@@ -238,7 +239,7 @@ function normalizeCameraViewUrl(cameraLink: string | undefined, uid: string) {
   return buildCameraViewUrl(uid);
 }
 
-export function CameraDuelCard({ player: livePlayer, side }: Props) {
+export function CameraDuelCard({ player: livePlayer, side, useDummyFallback = true }: Props) {
   const configList = DUMMY_ROTATION_PLAYERS[side];
 
   const rotationTick = useSyncExternalStore(
@@ -255,7 +256,7 @@ export function CameraDuelCard({ player: livePlayer, side }: Props) {
     setLiveErrored(false);
   }, [livePlayer?.uid]);
 
-  const isUsingFallback = !livePlayer || liveErrored;
+  const isUsingFallback = useDummyFallback && (!livePlayer || liveErrored);
 
   const visibleIndex = useMemo(() => {
     if (!configList.length) return 0;
@@ -264,6 +265,7 @@ export function CameraDuelCard({ player: livePlayer, side }: Props) {
 
   const activePlayer = useMemo(() => {
     if (!isUsingFallback && livePlayer) return livePlayer;
+    if (!isUsingFallback) return null;
     return configList[visibleIndex];
   }, [isUsingFallback, livePlayer, configList, visibleIndex]);
 

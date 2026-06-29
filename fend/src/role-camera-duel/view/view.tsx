@@ -18,13 +18,14 @@ function HiddenPreload({ player, side }: { player: RoleCameraPlayer | null; side
   if (!player?.cameraLink) return null;
   return (
     <div className={styles.preloadLayer} aria-hidden="true">
-      <CameraDuelCard player={player} side={side} />
+      <CameraDuelCard player={player} side={side} useDummyFallback={false} />
     </div>
   );
 }
 
 export function RoleCameraDuelView({ status, url, error, role, leftPlayer, rightPlayer, preloadLeftPlayer, preloadRightPlayer }: Props) {
   const hasPlayers = Boolean(leftPlayer || rightPlayer);
+  const useDummyFallback = status !== "open";
 
   useEffect(() => {
     document.documentElement.classList.add("overlay-page");
@@ -42,8 +43,8 @@ export function RoleCameraDuelView({ status, url, error, role, leftPlayer, right
       <HiddenPreload player={preloadRightPlayer} side="right" />
 
       <div className={styles.duelDock}>
-        <CameraDuelCard player={leftPlayer} side="left" />
-        <CameraDuelCard player={rightPlayer} side="right" />
+        <CameraDuelCard player={leftPlayer} side="left" useDummyFallback={useDummyFallback} />
+        <CameraDuelCard player={rightPlayer} side="right" useDummyFallback={useDummyFallback} />
       </div>
 
       {!hasPlayers && (
