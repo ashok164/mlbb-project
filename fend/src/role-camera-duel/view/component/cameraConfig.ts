@@ -1,8 +1,10 @@
-export const CAMERA_VIEW_BASE_URL = "https://api.freefireesportsnepal.com:3443/live";
+export const CAMERA_VIEW_BASE_URL = "https://camera.freefireesportsnepal.com:3443/live";
 
 export function buildCameraViewUrl(uid: string) {
   return `${CAMERA_VIEW_BASE_URL}/${uid}/whep`;
 }
+
+const TEST_CAMERA_UID = "2227154127";
 
 // Rotation interval time (10 seconds)
 export const ROTATION_INTERVAL_MS = 10000;
@@ -21,8 +23,8 @@ export interface DummyPlayer {
 export const DUMMY_ROTATION_PLAYERS: { left: DummyPlayer[]; right: DummyPlayer[] } = {
   left: [
     { 
-      uid: "118850161", // Real numeric streaming server ID
-      cameraLink: buildCameraViewUrl("118850161"), 
+      uid: TEST_CAMERA_UID, // Real numeric streaming server ID
+      cameraLink: buildCameraViewUrl(TEST_CAMERA_UID), 
       name: "camer1", 
       role: "Russ", 
       roleImage: "https://placehold.co/50", 
@@ -44,8 +46,8 @@ export const DUMMY_ROTATION_PLAYERS: { left: DummyPlayer[]; right: DummyPlayer[]
   ],
   right: [
     { 
-      uid: "201", 
-      cameraLink: buildCameraViewUrl("201"), 
+      uid: TEST_CAMERA_UID, 
+      cameraLink: buildCameraViewUrl(TEST_CAMERA_UID), 
       name: "camera 1", 
       role: "IGL", 
       roleImage: "https://placehold.co/50", 

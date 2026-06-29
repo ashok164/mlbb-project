@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { RoleCameraPlayer } from "../../repository/remote";
-import { DUMMY_ROTATION_PLAYERS, buildCameraViewUrl, ROTATION_INTERVAL_MS } from "./cameraconfig";
+import { DUMMY_ROTATION_PLAYERS, buildCameraViewUrl, ROTATION_INTERVAL_MS } from "./cameraConfig";
 import styles from "../view.module.css";
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
 let globalIndex = 0;
 let globalTimer: ReturnType<typeof setInterval> | null = null;
 const listeners = new Set<() => void>();
+const ICE_GATHERING_TIMEOUT_MS = 700;
 
 function subscribeRotation(listener: () => void) {
   listeners.add(listener);
@@ -37,28 +38,84 @@ function getRotationSnapshot() {
   return globalIndex;
 }
 
+function waitForIceGatheringComplete(pc: RTCPeerConnection) {
+  if (pc.iceGatheringState === "complete") {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    const timeoutId = window.setTimeout(() => {
+      pc.removeEventListener("icegatheringstatechange", handleIceGatheringStateChange);
+      resolve();
+    }, ICE_GATHERING_TIMEOUT_MS);
+
+    function handleIceGatheringStateChange() {
+      if (pc.iceGatheringState !== "complete") return;
+
+      window.clearTimeout(timeoutId);
+      pc.removeEventListener("icegatheringstatechange", handleIceGatheringStateChange);
+      resolve();
+    }
+
+    pc.addEventListener("icegatheringstatechange", handleIceGatheringStateChange);
+  });
+}
+
+async function readIceServers(endpoint: string): Promise<RTCIceServer[]> {
+  const response = await fetch(endpoint, { method: "OPTIONS" });
+  const rawLinks = response.headers.get("Link");
+  if (!rawLinks) return [];
+
+  return rawLinks.split(",").reduce<RTCIceServer[]>((servers, part) => {
+    const match = part.match(/<([^>]+)>;\s*rel="ice-server"(.*)/i);
+    if (!match) return servers;
+
+    const [, url, attributes] = match;
+    const username = attributes.match(/username="([^"]+)"/i)?.[1];
+    const credential = attributes.match(/credential="([^"]+)"/i)?.[1];
+
+    servers.push({
+      urls: [url],
+      username,
+      credential,
+    });
+
+    return servers;
+  }, []);
+}
+
 function WhepCamera({
   uid,
+  viewUrl,
   playerName,
   visible,
   onReady,
   onError,
 }: {
   uid: string;
+  viewUrl?: string;
   playerName: string;
   visible: boolean;
   onReady?: () => void;
   onError?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraViewUrl = useMemo(() => normalizeCameraViewUrl(viewUrl, uid), [viewUrl, uid]);
 
   useEffect(() => {
     let pc: RTCPeerConnection | null = null;
+    let mediaStream: MediaStream | null = null;
     let stopped = false;
 
     async function start() {
       try {
-        pc = new RTCPeerConnection();
+        const iceServers = await readIceServers(cameraViewUrl);
+        pc = new RTCPeerConnection({ iceServers });
+        mediaStream = new MediaStream();
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
 
         pc.addTransceiver("video", { direction: "recvonly" });
         pc.addTransceiver("audio", { direction: "recvonly" });
@@ -66,22 +123,36 @@ function WhepCamera({
         pc.ontrack = (event) => {
           if (stopped || !videoRef.current) return;
 
-          videoRef.current.srcObject = event.streams[0];
+          mediaStream?.addTrack(event.track);
 
-          videoRef.current.onplaying = () => {
+          const markReady = async () => {
+            if (stopped || !videoRef.current) return;
+
+            try {
+              await videoRef.current.play();
+            } catch {
+              // The element is muted, so autoplay should usually pass. Keep the stream attached either way.
+            }
+
             if (!stopped) onReady?.();
           };
+
+          if (event.track.kind === "video") {
+            videoRef.current.addEventListener("loadeddata", markReady, { once: true });
+            void markReady();
+          }
         };
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        await waitForIceGatheringComplete(pc);
 
-        const response = await fetch(buildCameraViewUrl(uid), {
+        const response = await fetch(cameraViewUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/sdp",
           },
-          body: offer.sdp || "",
+          body: pc.localDescription?.sdp || "",
         });
 
         if (!response.ok) {
@@ -113,9 +184,10 @@ function WhepCamera({
         videoRef.current.srcObject = null;
       }
 
+      mediaStream?.getTracks().forEach((track) => track.stop());
       pc?.close();
     };
-  }, [uid]);
+  }, [uid, cameraViewUrl]);
 
   return (
     <video
@@ -139,6 +211,31 @@ function WhepCamera({
       }}
     />
   );
+}
+
+function normalizeCameraViewUrl(cameraLink: string | undefined, uid: string) {
+  const cleanLink = String(cameraLink || "").trim();
+  if (!cleanLink) return buildCameraViewUrl(uid);
+
+  try {
+    const parsedUrl = new URL(cleanLink);
+    const joinId = parsedUrl.pathname === "/join" ? parsedUrl.searchParams.get("id") : "";
+    if (joinId) {
+      return buildCameraViewUrl(joinId);
+    }
+  } catch {
+    // Not a full URL. Fall through to the known endpoint checks.
+  }
+
+  if (cleanLink.includes("/whip")) {
+    return cleanLink.replace("/whip", "/whep");
+  }
+
+  if (cleanLink.includes("/whep")) {
+    return cleanLink;
+  }
+
+  return buildCameraViewUrl(uid);
 }
 
 export function CameraDuelCard({ player: livePlayer, side }: Props) {
@@ -211,6 +308,7 @@ export function CameraDuelCard({ player: livePlayer, side }: Props) {
           <WhepCamera
             key={`live-${side}-${livePlayer.uid}`}
             uid={livePlayer.uid}
+            viewUrl={livePlayer.cameraLink}
             playerName={livePlayer.name}
             visible={!liveErrored}
             onReady={() => {}}
@@ -228,6 +326,7 @@ export function CameraDuelCard({ player: livePlayer, side }: Props) {
               <WhepCamera
                 key={`stack-${side}-${p.uid}`}
                 uid={p.uid}
+                viewUrl={p.cameraLink}
                 playerName={p.name}
                 visible={isActive && isReady && !hasError}
                 onReady={() =>
